@@ -1,2 +1,90 @@
 https://faircat.ru/rabota-s-git-v-unity/
+https://docs.unity3d.com/ru/530/Manual/SmartMerge.html
+https://unity3d.com/ru/learn/tutorials/topics/cloud-build/creating-your-first-source-control-repository
+
+
+
 Не забываем включить настройки в editor и vcs: Unity имеет несколько настроек, Version Control Mode и Asset Serialization Mode, это сцены, префабы и мета файлы, которые будут записаны на диск в более подходящем для Git формате.
+
+
+
+Переименование файлов и их перемещение делать только их Unity, тк это обновляет мета файлы!
+
+
+
+В идеале мы не работаем над одной сденой одновлеменно! Есть основной левел-дизайнер, он работает. Остальные подготавливают материалы, скрипты, частицы, префабы итп.
+Если требуется настроить сложный префаб, то его разработчик может объяснить, как это сделать.
+Если ведется работа над сценой, то не основной левел-дизайнер сообщает об этом основному и они договариваются о сферах влияния на сцену(существует опасность при создании нового объекта в сцена присвоить ему одинаковый id, при слиянии сцен может быть странно - 2 объекта с однимID.)
+
+
+Нужно добавить в .git/config 
+(путь к файлу естественно свой и меняется при переводе проекта на другую версию движка)
+
+	
+[merge]
+    tool = unityyamlmerge
+	
+[mergetool "unityyamlmerge"]
+    cmd = 'E:\\unity\\editors\\2018.3.0f2\\Editor\\Data\\Tools\\UnityYAMLMerge.exe' merge -p "$BASE" "$REMOTE" "$LOCAL" "$MERGED"
+trustExitCode = false
+ 
+
+В следующий раз когда вы столкнётесь с конфликтом, который Git не сможет разрешить автоматически, выполните следующую команду:
+
+$ git mergetool
+И SmartMerge будет разрешать его самостоятельно(неудачная попытка мержа). Например:
+
+ ------------- Пример из консоли ----------------------------
+
+$ git merge feature1
+Auto-merging Assets/Scenes/GameOver.unity
+CONFLICT (content): Merge conflict in Assets/Scenes/GameOver.unity
+Automatic merge failed; fix conflicts and then commit the result.
+ 
+
+$ git mergetool
+Merging:
+Assets/Scenes/GameOver.unity
+ 
+Normal merge conflict for 'Assets/Scenes/GameOver.unity':
+  {local}: modified file
+  {remote}: modified file
+Conflicts:
+Conflict handling:
+Assets/Scenes/GameOver.unity seems unchanged.
+Was the merge successful [y/n]? y
+
+$ git merge feature1
+Auto-merging Assets/Scenes/GameOver.unity
+CONFLICT (content): Merge conflict in Assets/Scenes/GameOver.unity
+Automatic merge failed; fix conflicts and then commit the result.
+ 
+$ git mergetool
+Merging:
+Assets/Scenes/GameOver.unity
+ 
+Normal merge conflict for 'Assets/Scenes/GameOver.unity':
+  {local}: modified file
+  {remote}: modified file
+Conflicts:
+Conflict handling:
+Assets/Scenes/GameOver.unity seems unchanged.
+Was the merge successful [y/n]? y
+--------------------------------------------------
+
+
+
+Необходим git-lfs:
+https://www.atlassian.com/git/tutorials/git-lfs
+Одна специфичность Git (и других распределенных систем) по сравнению с централизованными системами состоит в том, что каждый репозиторий содержит всю историю проекта. Предположим, вы создали файл размером 100 Мб, измените его 100 раз таким образом, чтобы он плохо сжимался. В итоге вы получите репозиторий на 10 Гб. Это означает, что каждый клон будет загружать 10 Гб данных, есть 10 ГБ дискового пространства на каждой машине, на которой вы клонируете. Что еще более неприятно: вам все равно придется загружать эти 10 Гб данных, даже если вы git rm большие файлы.
+
+Вставка больших файлов в отдельную систему, например, git -lfs, позволяет хранить только указатели на каждую версию файла в репозитории, поэтому каждый клон будет загружать только крошечный фрагмент данных для каждой ревизии. В выписке будет загружена только версия, которую вы используете, т.е. 100 Мб в приведенном выше примере. В результате вы используете дисковое пространство на сервере, но сохраняете большую пропускную способность и дисковое пространство на клиенте.
+
+
+
+
+
+Работа ведется через пул-реквест. Есть только один ответственный для мержа.
+Работа ведется в стиле git-flow.
+
+Можно работать с гит в Rider(для программиста), можно использовать консоль или Source Tree или можно  git bush gui итп, для работы с гит. http://www.sourcetreeapp.com/
