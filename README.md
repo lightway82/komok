@@ -71,6 +71,7 @@ Conflict handling:
 Assets/Scenes/GameOver.unity seems unchanged.
 Was the merge successful [y/n]? y
 --------------------------------------------------
+https://habr.com/ru/post/323234/ Разрешение конфликтов в юнити при мерже
 
 
 
