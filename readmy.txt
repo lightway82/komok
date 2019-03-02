@@ -1,0 +1,2 @@
+https://faircat.ru/rabota-s-git-v-unity/
+Не забываем включить настройки в editor и vcs: Unity имеет несколько настроек, Version Control Mode и Asset Serialization Mode, это сцены, префабы и мета файлы, которые будут записаны на диск в более подходящем для Git формате.

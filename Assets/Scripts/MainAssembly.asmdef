@@ -1,0 +1,17 @@
+{
+    "name": "MainAssembly",
+    "references": [
+        "GameAssembly",
+        "LibrariesAssembly",
+        "UIAssembly",
+        "Managers"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
+}
