@@ -953,24 +953,12 @@ MonoBehaviour:
   m_ItemImage: {fileID: 0}
   m_Value: 0
   m_Options:
-    m_Options:
-    - m_Text: "\u041E\u0447\u0435\u043D\u044C \u043D\u0438\u0437\u043A\u043E"
-      m_Image: {fileID: 0}
-    - m_Text: "\u041D\u0438\u0437\u043A\u043E"
-      m_Image: {fileID: 0}
-    - m_Text: "\u0421\u0440\u0435\u0434\u043D\u0435"
-      m_Image: {fileID: 0}
-    - m_Text: "\u0412\u044B\u0441\u043E\u043A\u043E"
-      m_Image: {fileID: 0}
-    - m_Text: "\u041E\u0447\u0435\u043D\u044C \u0432\u044B\u0441\u043B\u043A\u043E"
-      m_Image: {fileID: 0}
-    - m_Text: "\u0423\u043B\u044C\u0442\u0440\u0430"
-      m_Image: {fileID: 0}
+    m_Options: []
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1373860377}
-        m_MethodName: Quality
+        m_MethodName: setQuality
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -2484,16 +2472,21 @@ MonoBehaviour:
   m_ItemImage: {fileID: 0}
   m_Value: 0
   m_Options:
-    m_Options:
-    - m_Text: Option A
-      m_Image: {fileID: 0}
-    - m_Text: Option B
-      m_Image: {fileID: 0}
-    - m_Text: Option C
-      m_Image: {fileID: 0}
+    m_Options: []
   m_OnValueChanged:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1373860377}
+        m_MethodName: setResolution
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_TypeName: UnityEngine.UI.Dropdown+DropdownEvent, UnityEngine.UI, Version=1.0.0.0,
       Culture=neutral, PublicKeyToken=null
 --- !u!114 &603247433
@@ -4128,6 +4121,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ResolutionsDropdown: {fileID: 603247432}
+  QualitiesDropdown: {fileID: 227338067}
+  LanguagesDropdown: {fileID: 1508192435}
+  MasterVolumeSlider: {fileID: 888391197}
+  FullscreenToggle: {fileID: 632878744}
 --- !u!1 &1378852211
 GameObject:
   m_ObjectHideFlags: 0
@@ -4602,16 +4599,21 @@ MonoBehaviour:
   m_ItemImage: {fileID: 0}
   m_Value: 0
   m_Options:
-    m_Options:
-    - m_Text: Option A
-      m_Image: {fileID: 0}
-    - m_Text: Option B
-      m_Image: {fileID: 0}
-    - m_Text: Option C
-      m_Image: {fileID: 0}
+    m_Options: []
   m_OnValueChanged:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1373860377}
+        m_MethodName: setLanguage
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_TypeName: UnityEngine.UI.Dropdown+DropdownEvent, UnityEngine.UI, Version=1.0.0.0,
       Culture=neutral, PublicKeyToken=null
 --- !u!114 &1508192436

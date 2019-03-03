@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using UnityEngine;
 
 /// <summary>
@@ -13,14 +14,55 @@ public class SettingsManager: BaseGameManager
     private bool _fullscreen;
     private float _masterVolume;
     private int _quality;
+    private int _language;
     
+    
+
     private Resolution[] _rsl;
     private List<string> _resolutions;
+    
+    //TODO Список зависит от настройки билда, списка по качеству! Если что-то менять там, то здесь тоже
+    private List<string> _qualities = new List<string>()
+    {
+        "Очень низко",
+        "Низко",
+        "Средне",
+        "Высоко",
+        "Очень высоко",
+        "Ультра"
+    };
+    
+    private OrderedDictionary _languages = new OrderedDictionary
+    {
+        {"en", "English"},
+        {"ru", "Русский"}
+    };
+  
 
+    
 
 
     public List<string> getResolutions() => _resolutions;
+    public List<string> getQualities() => _qualities;
+    public ICollection getLanguages() => _languages.Values;
 
+    /// <summary>
+    /// ИНдекс языка в словаре
+    /// </summary>
+    public int Language
+    {
+        get => _language;
+        set
+        {
+            _language = value;
+            
+            //TODO установка языка программы
+            PlayerPrefs.SetInt("app.language", _language);
+            PlayerPrefs.Save();
+            
+        }
+    }
+    
     //НЕОБХОДИМО БУДЕТ выводить диалог с подтверждением что норм и через 10 сек возвращать те запоминать надо настройку при изменении
     
     /// <summary>
@@ -31,8 +73,12 @@ public class SettingsManager: BaseGameManager
         get => _screenResolution;
         set
         {
-            _screenResolution = value;
-            Screen.SetResolution(_rsl[_screenResolution].width, _rsl[_screenResolution].height, _fullscreen);
+            if(value >= _rsl.Length ) _screenResolution = _rsl.Length-1;
+            else _screenResolution = value;
+          
+           Screen.SetResolution(_rsl[_screenResolution].width, _rsl[_screenResolution].height, _fullscreen);
+           PlayerPrefs.SetInt("screen.resolution", _screenResolution);
+           PlayerPrefs.Save();
         }
     }
 
@@ -43,6 +89,8 @@ public class SettingsManager: BaseGameManager
         {
             _fullscreen = value;
             Screen.fullScreen = _fullscreen;
+            PlayerPrefs.SetInt("screen.fullscreen", Convert.ToInt32(_fullscreen));
+            PlayerPrefs.Save();
         }
     }
 
@@ -53,7 +101,8 @@ public class SettingsManager: BaseGameManager
         {
             _masterVolume = value;
             Managers.Audio.AudioVolume(_masterVolume);
-            //как сохранять? не стоит это делать непрерывно. Возможно сохранять по таймеру - если в течении 5-10 сек ничего не меняли то сохранить
+            PlayerPrefs.SetFloat("audio.masterVolume", _masterVolume);
+            PlayerPrefs.Save();
         }
     }
 
@@ -66,8 +115,11 @@ public class SettingsManager: BaseGameManager
         get => _quality;
         set
         {
-            _quality = value;
+            if(value >= _qualities.Count )_quality =  _qualities.Count-1;
+            else _quality = value;
             QualitySettings.SetQualityLevel(_quality);
+            PlayerPrefs.SetInt("screen.quality", _quality);
+            PlayerPrefs.Save();
         }
     }
 
@@ -82,7 +134,68 @@ public class SettingsManager: BaseGameManager
         {
             _resolutions.Add(i.width +"x" + i.height);
         }
-       
+
+        loadSettings();
         Debug.Log("Loading Settings Manager");
+    }
+
+    /// <summary>
+    /// Инициализирует настройки сохраненные и по умолчанию. применяет их при старте игры.
+    /// Далее все могут читать и устанавливать их
+    /// </summary>
+    private void loadSettings()
+    {
+        void loadMasterVolumeSetting()
+        {
+            if (PlayerPrefs.HasKey("audio.masterVolume"))
+                _masterVolume = PlayerPrefs.GetFloat("audio.masterVolume");
+            else MasterVolume = 0;
+        }
+
+        void loadQualitySetting()
+        {
+            if (PlayerPrefs.HasKey("screen.quality"))
+                _quality = PlayerPrefs.GetInt("screen.quality");
+            else Quality = 3;
+        }
+
+        void loadResolutionSetting()
+        {
+            if (PlayerPrefs.HasKey("screen.resolution"))
+                _screenResolution = PlayerPrefs.GetInt("screen.resolution");
+            else
+            {
+                
+                ScreenResolution = _rsl.Length-1;
+            }
+            
+            
+            
+        }
+
+        void loadFullScreenSetting()
+        {
+            if (PlayerPrefs.HasKey("screen.fullscreen"))
+                _fullscreen = Convert.ToBoolean(PlayerPrefs.GetInt("screen.fullscreen"));
+            else Fullscreen = true;
+        }
+        //TODO можно как-то определить язык системы, чтобы поставить по умолчанию
+        void loadLanguageSetting()
+        {
+            if (PlayerPrefs.HasKey("app.language"))
+                _language = PlayerPrefs.GetInt("app.language");
+            else _language = 0;
+        }
+
+        loadFullScreenSetting();
+        loadResolutionSetting();
+        loadQualitySetting();
+        loadMasterVolumeSetting();
+        loadLanguageSetting();
+
+
+
+
+
     }
 }

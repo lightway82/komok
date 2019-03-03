@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,6 +10,19 @@ public class MenuControl : MonoBehaviour
     [SerializeField]
     private Dropdown ResolutionsDropdown;
 
+    [SerializeField]
+    private Dropdown QualitiesDropdown;
+    
+    [SerializeField]
+    private Dropdown LanguagesDropdown;
+    
+    [SerializeField]
+    private Slider MasterVolumeSlider;
+    
+    [SerializeField]
+    private Toggle FullscreenToggle;
+    
+    
     public void NewGameStart() => Managers.App.LoadNewGameWithCoroutine();
 
     public void PlayTestLevelPressed() => Managers.App.LoadLevelWithCoroutine(2);
@@ -22,7 +36,7 @@ public class MenuControl : MonoBehaviour
     public void ExitGame() => Managers.App.ExitApp();
     
     
-    public void Quality(int q)
+    public void setQuality(int q)
     {
         Managers.Settings.Quality = q;
        
@@ -38,9 +52,42 @@ public class MenuControl : MonoBehaviour
         Managers.Settings.Fullscreen = value;
     }
 
+    public void setLanguage(int q)
+    {
+        Managers.Settings.Language = q;
+       
+    }
+    
+    public void setResolution(int q)
+    {
+        Managers.Settings.ScreenResolution = q;
+       
+    }
+    
     private void Start()
     {
         ResolutionsDropdown.ClearOptions();
         ResolutionsDropdown.AddOptions(Managers.Settings.getResolutions());
+        ResolutionsDropdown.value = Managers.Settings.ScreenResolution;
+        
+        QualitiesDropdown.ClearOptions();
+        QualitiesDropdown.AddOptions(Managers.Settings.getQualities());
+        QualitiesDropdown.value = Managers.Settings.Quality;
+        
+        LanguagesDropdown.ClearOptions();
+        List<string> langOpts = new List<string>();
+        
+        foreach (var language in Managers.Settings.getLanguages())
+        {
+            langOpts.Add((string)language);
+        }
+
+        LanguagesDropdown.AddOptions(langOpts);
+        LanguagesDropdown.value = Managers.Settings.Language;
+
+
+        MasterVolumeSlider.value = Managers.Settings.MasterVolume;
+
+        FullscreenToggle.isOn = Managers.Settings.Fullscreen;
     }
 }
