@@ -4,9 +4,21 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-
+/// <summary>
+/// Контроллел меню
+/// </summary>
 public class MenuControl : MonoBehaviour
 {
+    
+    [SerializeField]
+    private GameObject MainPanel;
+    
+    [SerializeField]
+    private GameObject SettingsPanel;
+    
+    [SerializeField]
+    private DialogController DialogPanel;
+    
     [SerializeField]
     private Dropdown ResolutionsDropdown;
 
@@ -34,7 +46,22 @@ public class MenuControl : MonoBehaviour
     }
 
     public void ExitGame() => Managers.App.ExitApp();
+
+    public void OpenMainPanel()
+    {
+        MainPanel.SetActive(true);
+        SettingsPanel.SetActive(false);
+        DialogPanel.CloseDialogPanel();
+    }
     
+    public void OpenSettingsPanel()
+    {
+        MainPanel.SetActive(false);
+        SettingsPanel.SetActive(true);
+        DialogPanel.CloseDialogPanel();
+    }
+
+   
     
     public void setQuality(int q)
     {
@@ -89,5 +116,21 @@ public class MenuControl : MonoBehaviour
         MasterVolumeSlider.value = Managers.Settings.MasterVolume;
 
         FullscreenToggle.isOn = Managers.Settings.Fullscreen;
+    }
+
+    public void showInfo()
+    {
+        DialogPanel.OpenInfoDialog("Привет пасаны", "Ок");
+    }
+    
+    public void showChoice()
+    {
+        DialogPanel.OpenChoiceDialog("Привет пасаны", "Ок","No",
+            () =>
+            {
+                Debug.Log("))))))))))))))))))");
+                DialogPanel.CloseDialogPanel();
+            },
+            ()=>DialogPanel.CloseDialogPanel());
     }
 }
