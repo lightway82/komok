@@ -52,19 +52,19 @@ public class Managers : MonoBehaviour
          Localization,
          Save
       };
-
+      
+      foreach (var manager in _initListManagers)
+      {
+         manager.Startup();
+      }
+      //если все менеджеры синхронно инициализируются, то тут уже все готово(это важно, чтобы к start все было готово)
+      //если есть асинхронные процессы в initialization, то возможно далее придется покрутиться, но они уже будут завершены после awake
+      //Асинхронно нужно грузить ресурсы итп, то что не нужно в стартовой сцене и не является критичным для работы менеджеров. Важно чтобы мы могли в start полагаться на менеджеры, а доп ресурсы они могут подгрузить асинхронно!
       StartCoroutine(StartupManagers());
    }
 
    private IEnumerator StartupManagers()
    {
-      foreach (var manager in _initListManagers)
-      {
-         manager.Startup();
-      }
-
-      yield return null;
-
       int numModules = _initListManagers.Count;
       int numReady = 0;
       int lastReady;

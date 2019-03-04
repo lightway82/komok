@@ -72,7 +72,7 @@ public class GameLoader : MonoBehaviour {
         loadingText.text = "Загрузка...";
         isLoadScene = true;
 
-        //ждем загрузки менеджеров
+        //ждем загрузки  ресурсов в менеджерах(в онсновном они уже в start готовы)
         while (!Managers.isManagersLoadingDone)
         {
             yield return null;

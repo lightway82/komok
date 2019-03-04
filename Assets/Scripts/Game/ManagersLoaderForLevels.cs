@@ -6,7 +6,7 @@ public class ManagersLoaderForLevels : MonoBehaviour
 {
     [SerializeField]
     private Managers managersPrefab;
-
+   
     private void Awake()
     {
         if (GameObject.FindWithTag("Managers") == null)

@@ -15,7 +15,10 @@ public class SettingsManager: BaseGameManager
     private float _masterVolume;
     private int _quality;
     private int _language;
-    
+
+    [Tooltip("Позволяет при запуске очищать сохраненные настройки. Для тестирования!!!!")]
+    [SerializeField]
+    public bool ClearSavedSettings;
     
 
     private Resolution[] _rsl;
@@ -34,8 +37,8 @@ public class SettingsManager: BaseGameManager
     
     private OrderedDictionary _languages = new OrderedDictionary
     {
-        {"en", "English"},
-        {"ru", "Русский"}
+        {SystemLanguage.English, "English"},
+        {SystemLanguage.Russian, "Русский"}
     };
   
 
@@ -59,7 +62,6 @@ public class SettingsManager: BaseGameManager
             //TODO установка языка программы
             PlayerPrefs.SetInt("app.language", _language);
             PlayerPrefs.Save();
-            
         }
     }
     
@@ -135,6 +137,11 @@ public class SettingsManager: BaseGameManager
             _resolutions.Add(i.width +"x" + i.height);
         }
 
+        if (ClearSavedSettings)
+        {
+            Debug.LogWarning("Включена очистка сохраненных настроек при старте игры!!! Можно отключить в SettingsManager на стартовой сцене!");
+            PlayerPrefs.DeleteAll();
+        }
         loadSettings();
         Debug.Log("Loading Settings Manager");
     }
@@ -184,7 +191,21 @@ public class SettingsManager: BaseGameManager
         {
             if (PlayerPrefs.HasKey("app.language"))
                 _language = PlayerPrefs.GetInt("app.language");
-            else _language = 0;
+            else
+            {
+
+                if (_languages.Contains(Application.systemLanguage))
+                {
+                    int i = -1;
+                    foreach (var key in _languages.Keys)
+                    {
+                        i++;
+                        if (Application.systemLanguage.Equals(key)) break;
+                    }
+                    
+                    _language = i < 0? 0 : i;
+                } else _language = 0;
+            }
         }
 
         loadFullScreenSetting();
@@ -192,10 +213,14 @@ public class SettingsManager: BaseGameManager
         loadQualitySetting();
         loadMasterVolumeSetting();
         loadLanguageSetting();
+    }
 
-
-
-
-
+    /// <summary>
+    /// Очистка настроек в памяти и сохраненных. Сразу же сменит все режимы
+    /// </summary>
+    public void ClearSettings()
+    {
+        PlayerPrefs.DeleteAll();
+        loadSettings();
     }
 }

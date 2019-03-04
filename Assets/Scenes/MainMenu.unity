@@ -4579,6 +4579,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   managersPrefab: {fileID: 2252643070495378734, guid: e13fa9a88706d16409753b72bc973fc3,
     type: 3}
+  ClearSavedSettings: 0
 --- !u!4 &1202845472
 Transform:
   m_ObjectHideFlags: 0

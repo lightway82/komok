@@ -58,8 +58,17 @@ public class AppManager: BaseGameManager
     public override void Initializations()
     {
         AppState = ApplicationState.GameLoading;
+        Application.wantsToQuit += () =>
+        {
+            Debug.Log("Prepare Exit. wantsToQuit. Exit listeners started");
+            AppState = ApplicationState.ApplicationExited;
+            Debug.Log("Prepare Exit. Exit listeners completed.");
+            return true;
+        };
         Debug.Log("Loading AppStateManager...");
     }
+    
+    
 
     /// <summary>
     /// Загружает сцену меню. После загрузки сцены поменяет стэйт на ApplicationState.MainMenu
@@ -285,9 +294,8 @@ public class AppManager: BaseGameManager
     /// </summary>
     public void ExitApp()
     {
-        Debug.Log("Prepare Exit");
-        AppState = ApplicationState.ApplicationExited;
-        Debug.Log("Exit");
+        Debug.Log("Exit action");
+        
         Application.Quit();
     }
 
