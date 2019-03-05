@@ -328,3 +328,19 @@ public static class CoroutineHelper
         endFunc?.Invoke();
     }
 }
+
+/// <summary>
+///
+/// Кастомный waiter на который не влияет Time.timeScale
+/// </summary>
+public class WaitForSecondsRealtime : CustomYieldInstruction
+{
+    private float waitTime;
+    
+    public override bool keepWaiting => Time.realtimeSinceStartup < waitTime;
+
+    public WaitForSecondsRealtime(float waitTime)
+    {
+        this.waitTime = Time.realtimeSinceStartup + waitTime;
+    }
+}
