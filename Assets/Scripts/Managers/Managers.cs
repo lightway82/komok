@@ -79,6 +79,12 @@ public class Managers : MonoBehaviour
             if(numReady > lastReady) Debug.Log("Progress: " + numReady+"/"+ numModules);
             yield return null;
          }
+         
+         foreach (var manager in _initListManagers)
+         {
+            manager.PostInitialization();
+            yield return null;
+         }
          Debug.Log("All managers started.");
 
          isManagersLoadingDone = true;

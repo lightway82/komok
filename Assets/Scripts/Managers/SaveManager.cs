@@ -17,4 +17,10 @@ public class SaveManager: BaseGameManager
 
         CurrentLevel = 5;//заглушка
     }
+
+    public override void PostInitialization()
+    {
+        
+        
+    }
 }

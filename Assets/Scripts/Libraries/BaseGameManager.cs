@@ -14,7 +14,16 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public interface IManager
 {
+	/// <summary>
+	/// Для инициализации менеджера. Вызывается классом Managers
+	/// </summary>
+	void Initializations();
 	
+	/// <summary>
+	/// Для для завершения инициализации менеджера. Вызывается классом Managers, после того, как все менеджеры будут инициализированы и загружены.
+	/// Важно, что инициализация менеджеров не должна быть перекрестное, те один менеджер не должен что-то менять в другом. Тогда на этом этапе менеджер может взять у другого данные и дополнительно себя инициализировать.
+	/// </summary>
+	void PostInitialization();
 }
 
 //TODO: в новой версии unity ввести Enum в ограничение типа Event_Type, чтобы каждый менеджер делал свой enum и он был четко ясен всем
@@ -34,6 +43,8 @@ public abstract  class BaseGameManager: MonoBehaviour,IManager
 
 	
 	public abstract void Initializations();
+	public abstract void PostInitialization();
+	
 
 	/// <summary>
 	/// Инициализация менеджера. Не используется на прямую.

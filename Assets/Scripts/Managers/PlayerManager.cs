@@ -9,4 +9,10 @@ public class PlayerManager : BaseGameManager
        
        Debug.Log("PlayerManager started.");
     }
+
+    public override void PostInitialization()
+    {
+        
+        
+    }
 }

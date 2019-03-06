@@ -1,7 +1,15 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+
+/// <summary>
+/// Событие смены сцены в игре. В качестве int значение булет индекс новой сцены
+/// </summary>
+public class WantChangeSceneEvent : UnityEvent<int>
+{
+}
 
 
 /// <summary>
@@ -15,12 +23,18 @@ public class AppManager: BaseGameManager
     {
         GameLoading,//игра стартует, показываетс явступительный ролик и грузится главное меню
         MainMenu,//главное меню
-        LoadingScene,//грузится уровень, показывается экран загрузки
+        LoadingLevel,//грузится уровень, показывается экран загрузки
         LevelInProcess,//осуществляется активная игра на уровне(от назружен и нет паузы)
         ApplicationPause,//только на уровне может быть включена, при этом показывается обычно меню паузы
         ApplicationExited//готовится выход из приложения
     }
-    
+
+    /// <summary>
+    /// Событие смены сцены в игре. Сцена еще не начала грузиться.
+    /// В качестве int значение булет индекс новой сцены
+    /// </summary>
+    public WantChangeSceneEvent WantChangeSceneEvent { get; private set; }
+
     private ApplicationState _appState;
 
     private float timeScale;//для временного созранения значения при операциях со временем
@@ -57,6 +71,7 @@ public class AppManager: BaseGameManager
 
     public override void Initializations()
     {
+        WantChangeSceneEvent = new WantChangeSceneEvent();
         AppState = ApplicationState.GameLoading;
         Application.wantsToQuit += () =>
         {
@@ -67,8 +82,12 @@ public class AppManager: BaseGameManager
         };
         Debug.Log("Loading AppStateManager...");
     }
-    
-    
+
+    public override void PostInitialization()
+    {
+        
+    }
+
 
     /// <summary>
     /// Загружает сцену меню. После загрузки сцены поменяет стэйт на ApplicationState.MainMenu
@@ -76,6 +95,7 @@ public class AppManager: BaseGameManager
     /// <returns>Вернет асинхронную операцию, можно показать прогресс итп</returns>
     public AsyncOperation LoadMainMenu()
     {
+        WantChangeSceneEvent.Invoke(1);
         var operation = SceneManager.LoadSceneAsync(1);
         operation.completed += OnMainMenuLoaded;
         return operation;
@@ -89,9 +109,8 @@ public class AppManager: BaseGameManager
     /// <returns></returns>
     public IEnumerator LoadMainMenu(bool withLoadingScreen)
     {
-
        if(withLoadingScreen) yield return LoadLoadingScreenSceneWithCoroutine();
-        
+        WantChangeSceneEvent.Invoke(1);
         var operation = SceneManager.LoadSceneAsync(1);
         while (!operation.isDone)
         {
@@ -144,26 +163,9 @@ public class AppManager: BaseGameManager
     public IEnumerator LoadLevel(int index)
     {
         if (index < 4) index = 4;
-        
-        var operation = SceneManager.LoadSceneAsync(3);//грузим уровень с экраном загрузки
 
-        while (!operation.isDone)
-        {
-            yield return null;
-        }
-        Debug.Log("Load  screen  is loaded.");
-        AppState = ApplicationState.LoadingScene;
-        
-        
-        operation = SceneManager.LoadSceneAsync(index);//грузим уровень игровой
-
-        while (!operation.isDone)
-        {
-            yield return null;
-        }
-        Debug.Log("Load  game level  is done.");
-        AppState = ApplicationState.LevelInProcess;
-        
+        yield return LoadLoadingScreenScene();
+        yield return LoadLevelWithoutLoadingScreen(index);
     }
 
     
@@ -185,10 +187,10 @@ public class AppManager: BaseGameManager
     /// </summary>
     /// <param name="index"> Индекс уровня. Уровни начинаются от 4 индекса</param>
     /// <returns></returns>
-    public IEnumerator LoadLevelForce(int index)
+    public IEnumerator LoadLevelWithoutLoadingScreen(int index)
     {
         if (index < 4) index = 4;
-        
+        WantChangeSceneEvent.Invoke(index);
         var operation = SceneManager.LoadSceneAsync(index);//грузим уровень игровой
 
         while (!operation.isDone)
@@ -205,7 +207,8 @@ public class AppManager: BaseGameManager
     /// </summary>
     /// <returns></returns>
     public IEnumerator LoadLoadingScreenScene()
-    {
+    {  
+        WantChangeSceneEvent.Invoke(3);
         var operation = SceneManager.LoadSceneAsync(3);//грузим уровень с экраном загрузки
 
         while (!operation.isDone)
@@ -213,7 +216,7 @@ public class AppManager: BaseGameManager
             yield return null;
         }
         Debug.Log("Load  screen  is loaded.");
-        AppState = ApplicationState.LoadingScene;
+        AppState = ApplicationState.LoadingLevel;
         
     }
 
@@ -234,9 +237,9 @@ public class AppManager: BaseGameManager
             Debug.LogError("Вызывать LoadNewGame() можно только из главного меню!");
             yield break;
         }
-        yield return StartCoroutine(LoadLoadingScreenScene());
-        yield return StartCoroutine(PrepareGameStateForNewsGame());
-        yield return StartCoroutine(LoadLevel(4));
+        yield return LoadLoadingScreenScene();
+        yield return PrepareGameStateForNewsGame();
+        yield return LoadLevelWithoutLoadingScreen(4);
     }
 
     
@@ -266,10 +269,10 @@ public class AppManager: BaseGameManager
     /// <returns></returns>
     public IEnumerator ContinueGame()
     {
-        yield return StartCoroutine(LoadLoadingScreenScene());
-        yield return StartCoroutine(PrepareGameStateForContinueGame());
+        yield return LoadLoadingScreenScene();
+        yield return PrepareGameStateForContinueGame();
         //уровен загружается в уже готовый стэйт, который ранее подготовлен PrepareGameStateForContinueGame()
-        yield return StartCoroutine(LoadLevel(Managers.Save.CurrentLevel));
+        yield return LoadLevelWithoutLoadingScreen(Managers.Save.CurrentLevel);
     }
 
     /// <summary>

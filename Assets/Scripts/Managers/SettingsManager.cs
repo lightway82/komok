@@ -3,6 +3,26 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using UnityEngine;
+using UnityEngine.Events;
+
+public class LanguageItem
+{
+    public string Name { get; }
+    public string Abbr { get; }
+    public SystemLanguage Language { get; }
+
+    public LanguageItem(string name, string abbr, SystemLanguage lang)
+    {
+        Name = name;
+        Abbr = abbr;
+        Language = lang;
+    }
+}
+
+
+public class ChangeLanguageEvent : UnityEvent<LanguageItem>
+{
+}
 
 /// <summary>
 /// Применяет настройки графики итп.
@@ -19,8 +39,8 @@ public class SettingsManager: BaseGameManager
     [Tooltip("Позволяет при запуске очищать сохраненные настройки. Для тестирования!!!!")]
     [SerializeField]
     public bool ClearSavedSettings;
-    
 
+    public ChangeLanguageEvent ChangeLanguageEvent { get; private set; }
     private Resolution[] _rsl;
     private List<string> _resolutions;
     
@@ -34,37 +54,48 @@ public class SettingsManager: BaseGameManager
         "Очень высоко",
         "Ультра"
     };
-    
-    private OrderedDictionary _languages = new OrderedDictionary
+
+    private List<LanguageItem> _languages = new List<LanguageItem>()
     {
-        {SystemLanguage.English, "English"},
-        {SystemLanguage.Russian, "Русский"}
+        new LanguageItem("English","en", SystemLanguage.English),
+        new LanguageItem("Русский","ru", SystemLanguage.Russian)
     };
   
-
-    
+    /// <summary>
+    /// Текущий языковой объект соответствующий хранимому в настройках языковому индексу. 
+    /// </summary>
+    /// <returns></returns>
+    public LanguageItem getCurrentLanguageItem() => _languages[_language];
 
 
     public List<string> getResolutions() => _resolutions;
     public List<string> getQualities() => _qualities;
-    public ICollection getLanguages() => _languages.Values;
+    public List<LanguageItem> getLanguages() => _languages;
 
     /// <summary>
-    /// ИНдекс языка в словаре
+    /// ИНдекс языка в списке
     /// </summary>
     public int Language
     {
         get => _language;
         set
         {
-            _language = value;
             
-            //TODO установка языка программы
-            PlayerPrefs.SetInt("app.language", _language);
-            PlayerPrefs.Save();
+            if (_language != value)
+            {
+                if (value >= _languages.Count) _language = _languages.Count - 1;
+                else _language = value;
+               
+                PlayerPrefs.SetInt("app.language", _language);
+                PlayerPrefs.Save();
+              
+                ChangeLanguageEvent.Invoke(_languages[_language]);
+            }
         }
     }
+
     
+
     //НЕОБХОДИМО БУДЕТ выводить диалог с подтверждением что норм и через 10 сек возвращать те запоминать надо настройку при изменении
     
     /// <summary>
@@ -130,6 +161,7 @@ public class SettingsManager: BaseGameManager
 
     public override void Initializations()
     {
+        ChangeLanguageEvent = new  ChangeLanguageEvent();
         _resolutions = new List<string>();
         _rsl = Screen.resolutions;
         foreach (var i in _rsl)
@@ -144,6 +176,12 @@ public class SettingsManager: BaseGameManager
         }
         loadSettings();
         Debug.Log("Loading Settings Manager");
+    }
+
+    public override void PostInitialization()
+    {
+        
+        
     }
 
     /// <summary>
@@ -193,18 +231,16 @@ public class SettingsManager: BaseGameManager
                 _language = PlayerPrefs.GetInt("app.language");
             else
             {
-
-                if (_languages.Contains(Application.systemLanguage))
+               
+                int index = -1;
+                for (int i = 0; i < _languages.Count; i++)
                 {
-                    int i = -1;
-                    foreach (var key in _languages.Keys)
-                    {
-                        i++;
-                        if (Application.systemLanguage.Equals(key)) break;
-                    }
-                    
-                    _language = i < 0? 0 : i;
-                } else _language = 0;
+                    if (_languages[i].Language != Application.systemLanguage) continue;
+                    index = i;
+                    break;
+                }
+                
+                _language = index != -1 ? index : 0;
             }
         }
 

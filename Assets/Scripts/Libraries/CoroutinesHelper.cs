@@ -327,6 +327,14 @@ public static class CoroutineHelper
         func(timer,time);
         endFunc?.Invoke();
     }
+    
+    public static IEnumerator WaitForAll(params Coroutine[] coroutines)
+    {
+        for (int i = 0; i < coroutines.Length; i++)
+        {
+            yield return coroutines[i];
+        }
+    }
 }
 
 /// <summary>

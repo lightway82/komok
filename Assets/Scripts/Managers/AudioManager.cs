@@ -16,8 +16,14 @@ public class AudioManager: BaseGameManager
        
         Debug.Log("AudioManager started.");
     }
-    
-    
+
+    public override void PostInitialization()
+    {
+        
+        
+    }
+
+
     public void AudioVolume(float value)
     {
         audioMixer.SetFloat(exposedVolumeName, value);

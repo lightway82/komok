@@ -104,9 +104,9 @@ public class MenuControl : MonoBehaviour
         LanguagesDropdown.ClearOptions();
         List<string> langOpts = new List<string>();
         
-        foreach (var language in Managers.Settings.getLanguages())
+        foreach (LanguageItem language in Managers.Settings.getLanguages())
         {
-            langOpts.Add((string)language);
+            langOpts.Add(language.Name);
         }
 
         LanguagesDropdown.AddOptions(langOpts);

@@ -12,4 +12,10 @@ public class GameManager: BaseGameManager
        
         Debug.Log("Loading Game manager.");
     }
+
+    public override void PostInitialization()
+    {
+        
+        
+    }
 }
