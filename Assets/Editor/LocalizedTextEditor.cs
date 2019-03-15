@@ -37,7 +37,7 @@ public class LocalizedTextEditor : EditorWindow
     private void OnGUI()
     {
         GUILayout.Label("Путь к директории локализации:"+localizationDir);
-
+        GUILayout.Label("Добавляя ключи, учтите, что точка разделяет подкатегории и важна для работы. Группируйте ключи по категориям и подкатегориям!");
         EditorGUILayout.BeginHorizontal();
             EditorGUILayout.BeginVertical(GUILayout.Width(350f), GUILayout.MaxWidth(350f));
                 EditorGUILayout.BeginHorizontal(GUILayout.Width(350f), GUILayout.MaxWidth(350f));
@@ -220,9 +220,9 @@ public class LocalizedTextEditor : EditorWindow
         //выбрать ключ в списке, чтобы вывелись редактируемые поля
         
 
-        if (localizationData.ContainsKey(newKey))
+        if (localizationData.ContainsKey(newKey) || String.IsNullOrEmpty(newKey))
         {
-            EditorUtility.DisplayDialog("Создание нового ключа", "Ключ  " + newKey + " уже существует.",
+            EditorUtility.DisplayDialog("Создание нового ключа", "Ключ  " + newKey + " уже существует или пустой!",
                 "Ясно!");
             return;
         }
