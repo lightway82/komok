@@ -10,7 +10,7 @@ public class LocalizationManager: BaseGameManager
 {
     
     private Dictionary<string, string> localizedText = new Dictionary<string, string> ();
-    private readonly List<ILocalizedItem> registeredItems = new List<ILocalizedItem>();
+    private readonly HashSet<ILocalizedItem> registeredItems = new HashSet<ILocalizedItem>();
     
     public override void Initializations()
     {
@@ -27,7 +27,9 @@ public class LocalizationManager: BaseGameManager
         Managers.App.WantChangeSceneEvent.AddListener(ClearRegistered);
         Managers.Settings.ChangeLanguageEvent.AddListener(OnChangedLanguage);
         LoadLocalizedText("localization\\strings_"+Managers.Settings.getCurrentLanguageItem().Abbr+".json");
-        
+        //если в рдакторе запустили, то перезагрузить надо всеэлементы языковые, тк при запуске отдельного уровня
+        //LoadLocalizedText не успевает отработать до того как элементы вставлены и инициализированы(они в start инициализируются). В штатном запуске все будет загружено еще при начальной загрузке игры
+        if (Application.isEditor) OnChangedLanguage(Managers.Settings.getCurrentLanguageItem());
     }
 
     private void OnChangedLanguage(LanguageItem lang)
@@ -43,12 +45,13 @@ public class LocalizationManager: BaseGameManager
         //TODO если текстов много и видны подвисания, то следует процессы загрузки делать через yield разбив по кадрам или вообще сделать таск в отдельном потоке
         LoadLocalizedText("localization\\strings_"+Managers.Settings.getCurrentLanguageItem().Abbr+".json");
         yield return null;
-        
-        for (int i=0; i< registeredItems.Count; i++)
+        int i = -1;
+        foreach (var registeredItem in registeredItems)
         {
-            registeredItems[i].SetLocalizedData();
+            i++;
+            registeredItem.SetLocalizedData();
             if (i % 100 != 0) yield return null;//разобьем по 100 элементов на кадр.
-        } 
+        }
     }
 
     /// <summary>
@@ -83,13 +86,16 @@ public class LocalizationManager: BaseGameManager
             Debug.LogError ("Cannot find localization file: "+filePath);
         }
     }
-    
+
     /// <summary>
     /// Вернет локализованное значение иначе вернет значение ключа, чтобы можно было понять где нет перевода
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
-    public string GetLocalizedValue(string key) => localizedText.ContainsKey(key) ? localizedText[key] : key;
+    public string GetLocalizedValue(string key)
+    {
+       return localizedText.ContainsKey(key) ? localizedText[key] : key; 
+    } 
 
     /// <summary>
     /// Проверяет есть ли для данного ключа перевод
