@@ -15,6 +15,38 @@
         {
             "key": "menu.exit",
             "value": "Выход"
+        },
+        {
+            "key": "menu.name",
+            "value": "Комок: Исход"
+        },
+        {
+            "key": "menu.about",
+            "value": "Об игре"
+        },
+        {
+            "key": "menu.options.fullscreen",
+            "value": "Полный экран"
+        },
+        {
+            "key": "menu.options.master_volume",
+            "value": "Общая громкость"
+        },
+        {
+            "key": "menu.options.quality",
+            "value": "Качество"
+        },
+        {
+            "key": "menu.options.resolutions",
+            "value": "Разрешение экрана"
+        },
+        {
+            "key": "menu.options.language",
+            "value": "Язык игры"
+        },
+        {
+            "key": "menu.back",
+            "value": ""
         }
     ]
 }

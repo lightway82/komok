@@ -15,6 +15,38 @@
         {
             "key": "menu.exit",
             "value": "Exit"
+        },
+        {
+            "key": "menu.name",
+            "value": "Komok: Exodus"
+        },
+        {
+            "key": "menu.about",
+            "value": "About"
+        },
+        {
+            "key": "menu.options.fullscreen",
+            "value": "Fullscreen mode"
+        },
+        {
+            "key": "menu.options.master_volume",
+            "value": "General audio volume"
+        },
+        {
+            "key": "menu.options.quality",
+            "value": "Quality"
+        },
+        {
+            "key": "menu.options.resolutions",
+            "value": "Screen resolution"
+        },
+        {
+            "key": "menu.options.language",
+            "value": "Language"
+        },
+        {
+            "key": "menu.back",
+            "value": ""
         }
     ]
 }

@@ -48,7 +48,7 @@ public class LocalizedTextEditor : EditorWindow
                       AddNewKey(newKey);
                     }
                     
-                
+                    
                     if (GUILayout.Button("-", GUILayout.Width(50f)))
                     {
                         if (selectionGridIndex != -1)
@@ -61,13 +61,14 @@ public class LocalizedTextEditor : EditorWindow
                 _scrollPosition = GUILayout.BeginScrollView (_scrollPosition);
                  _guiContents = GetGUIContentsFromItems();
                  if (selectionGridIndex == -2) selectionGridIndex = GetGUIIndexByKey(addedKey);
+                 SelectedItemDisplay (selectionGridIndex);
                 selectionGridIndex = GUILayout.SelectionGrid (selectionGridIndex, _guiContents,1,GetGUIStyleKeys ());
                
                 GUILayout.EndScrollView ();
             EditorGUILayout.EndVertical();
         
             EditorGUILayout.BeginVertical();
-                   
+                    GUI.SetNextControlName("___");
                     if (GUILayout.Button("Сохранить изменения"))
                     {
                         SaveAllFiles();
@@ -109,23 +110,32 @@ public class LocalizedTextEditor : EditorWindow
     private int prevIndex = -1;
     private void SelectedItemAction(int index)
     {
-        if(prevIndex!=index)  GUI.FocusControl("SAVE_ALL");//снимаем фокус с текстарий иначе в них не будет обновляться значение при открытии другого ключа
+        if(prevIndex!=index)  {
+            GUI.FocusControl("SAVE_ALL");//снимаем фокус с текстарий иначе в них не будет обновляться значение при открытии другого ключа
+            
+        }
         if (index >-1)
         {
-            Debug.Log("Selected Item is: " + index);
+            
             string key = guiContents[index].text;
             foreach (var item in localizationData[key])
             {
                 Languages.GetLanguageItem(item.lang, out LanguageItem lang);
                 GUILayout.Label(lang.Name+":");
-                Debug.Log("value: " + item.value);
+               
                 item.value = EditorGUILayout.TextArea(item.value, GUILayout.Height(150));
             }
 
             prevIndex = index;
         }
     }
-
+    
+    private void SelectedItemDisplay(int index)
+    {
+            if (index >-1) EditorGUILayout.TextField("", guiContents[index].text, GUILayout.ExpandWidth(true));
+           
+    }
+    
     private GUIStyle GetGUIStyleKeys () {
         GUIStyle guiStyle = new GUIStyle(GUI.skin.button)
         {

@@ -1,9 +1,7 @@
 {
-    "name": "UIAssembly",
+    "name": "ToolsAssembly",
     "references": [
-        "LibrariesAssembly",
-        "Managers",
-        "ToolsAssembly"
+        "LibrariesAssembly"
     ],
     "optionalUnityReferences": [],
     "includePlatforms": [],
