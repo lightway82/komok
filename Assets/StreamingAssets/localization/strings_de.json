@@ -1,0 +1,20 @@
+{
+    "items": [
+        {
+            "key": "menu.options",
+            "value": "Options"
+        },
+        {
+            "key": "menu.continue",
+            "value": "Continue"
+        },
+        {
+            "key": "menu.new_game",
+            "value": "Start new game"
+        },
+        {
+            "key": "menu.exit",
+            "value": "Exit"
+        }
+    ]
+}

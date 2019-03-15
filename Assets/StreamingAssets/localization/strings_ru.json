@@ -1,0 +1,20 @@
+{
+    "items": [
+        {
+            "key": "menu.options",
+            "value": "Настройки"
+        },
+        {
+            "key": "menu.continue",
+            "value": "Продолжить"
+        },
+        {
+            "key": "menu.new_game",
+            "value": "Начать новую игру"
+        },
+        {
+            "key": "menu.exit",
+            "value": "Выход"
+        }
+    ]
+}

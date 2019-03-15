@@ -5,20 +5,6 @@ using System.Collections.Specialized;
 using UnityEngine;
 using UnityEngine.Events;
 
-public class LanguageItem
-{
-    public string Name { get; }
-    public string Abbr { get; }
-    public SystemLanguage Language { get; }
-
-    public LanguageItem(string name, string abbr, SystemLanguage lang)
-    {
-        Name = name;
-        Abbr = abbr;
-        Language = lang;
-    }
-}
-
 
 public class ChangeLanguageEvent : UnityEvent<LanguageItem>
 {
@@ -55,11 +41,7 @@ public class SettingsManager: BaseGameManager
         "Ультра"
     };
 
-    private List<LanguageItem> _languages = new List<LanguageItem>()
-    {
-        new LanguageItem("English","en", SystemLanguage.English),
-        new LanguageItem("Русский","ru", SystemLanguage.Russian)
-    };
+    private List<LanguageItem> _languages = Languages._languages;
   
     /// <summary>
     /// Текущий языковой объект соответствующий хранимому в настройках языковому индексу. 
