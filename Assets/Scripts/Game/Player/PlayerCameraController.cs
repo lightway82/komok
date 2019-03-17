@@ -20,7 +20,7 @@ public class PlayerCameraController : MonoBehaviour
     //Damping for rotation
     public float RotationDamp = 4f;
 
-    //Damping for position
+    //Damping for position можно создавать эффект приближения и отдаления
     public float PosDamp = 4f;
     
     private Vector3 lastPos;
@@ -61,11 +61,14 @@ public class PlayerCameraController : MonoBehaviour
        
         Vector3 moveDirection = (lastPos - Target.position).normalized;
         lastPos = Target.position;
-        
-        if(moveDirection.magnitude<0.1) return;
-       // ThisTransform.position = Target.position + moveDirection*30+new Vector3(1,10,1); 
-        ThisTransform.position = Vector3.Slerp(ThisTransform.position,
-            Target.position + moveDirection * 10*moveDirection.magnitude + new Vector3(1, 10, 1), PosDamp * Time.deltaTime);
+
+        if (moveDirection.magnitude > 0.04)
+        {
+            // ThisTransform.position = Target.position + moveDirection*30+new Vector3(1,10,1); 
+            ThisTransform.position = Vector3.Slerp(ThisTransform.position,
+                Target.position + moveDirection * PosDamp*moveDirection.magnitude + new Vector3(0, 3, 0), PosDamp * Time.deltaTime);   
+        }
+      
         
         ThisTransform.LookAt(Target);
     }
