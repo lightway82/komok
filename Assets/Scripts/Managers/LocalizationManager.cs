@@ -56,7 +56,7 @@ public class LocalizationManager: BaseGameManager
 
     /// <summary>
     /// Очистка списка зарегистрированных локализованных элементов между сценами
-    /// 
+    /// Вызывается как обработчик события смены сцены
     /// </summary>
     private void ClearRegistered(int sceneIndex)
     {

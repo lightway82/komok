@@ -1,0 +1,72 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerCameraController : MonoBehaviour
+{
+    //---------------------------------------------------------------
+    //Follow target
+    public Transform Target;
+
+    //Reference to local transform
+    private Transform ThisTransform;
+
+    //Linear distance to maintain from target (in world units)
+    public float DistanceFromTarget = 10.0f;
+
+    //Height of camera above target
+    public float CamHeight = 1f;
+
+    //Damping for rotation
+    public float RotationDamp = 4f;
+
+    //Damping for position
+    public float PosDamp = 4f;
+    
+    private Vector3 lastPos;
+    //---------------------------------------------------------------
+    void Awake()
+    {
+        //Get transform for camera
+        ThisTransform = GetComponent<Transform>();
+    }
+
+    private void Start()
+    {
+        lastPos = Target.position;
+    }
+
+    //---------------------------------------------------------------
+    // Update is called once per frame
+    void LateUpdate () 
+    {
+     /*   //Get output velocity
+        Vector3 Velocity = Vector3.zero;
+
+        //Calculate rotation interpolate
+        ThisTransform.rotation = Quaternion.Slerp(ThisTransform.rotation, Target.rotation, RotationDamp * Time.deltaTime);
+
+        //Get new position
+        Vector3 Dest = ThisTransform.position = Vector3.SmoothDamp(ThisTransform.position, Target.position, ref Velocity, PosDamp * Time.deltaTime);
+
+        //Move away from target
+       ThisTransform.position = Dest - ThisTransform.forward * DistanceFromTarget;
+
+        //Set height
+        ThisTransform.position = new Vector3(ThisTransform.position.x, CamHeight, ThisTransform.position.z);
+
+        //Look at dest
+        ThisTransform.LookAt(Dest);
+        */
+       
+        Vector3 moveDirection = (lastPos - Target.position).normalized;
+        lastPos = Target.position;
+        
+        if(moveDirection.magnitude<0.1) return;
+       // ThisTransform.position = Target.position + moveDirection*30+new Vector3(1,10,1); 
+        ThisTransform.position = Vector3.Slerp(ThisTransform.position,
+            Target.position + moveDirection * 10*moveDirection.magnitude + new Vector3(1, 10, 1), PosDamp * Time.deltaTime);
+        
+        ThisTransform.LookAt(Target);
+    }
+}
