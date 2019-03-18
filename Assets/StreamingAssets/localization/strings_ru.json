@@ -47,6 +47,26 @@
         {
             "key": "menu.back",
             "value": "Назад"
+        },
+        {
+            "key": "menu.to_main_menu",
+            "value": "Вернуться в главное меню"
+        },
+        {
+            "key": "yes",
+            "value": "Да"
+        },
+        {
+            "key": "No",
+            "value": "Нет"
+        },
+        {
+            "key": "menu.return_to_main_menu",
+            "value": "Выйти из игры? Текущая игра будет прервана."
+        },
+        {
+            "key": "menu.quit_the_game_quastion",
+            "value": "Выйти из игры? Текущая игра будет прервана."
         }
     ]
 }

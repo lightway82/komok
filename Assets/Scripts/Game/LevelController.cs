@@ -1,18 +1,62 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class LevelController : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    
+    [SerializeField]
+    private GameObject MenuContainerPrefab;
+    private GameObject MenuContainer;
+    
+    private void Start()
     {
         
+        Managers.App.AddAppStateListener(AppStateListener);
+        MenuContainer =  Instantiate(MenuContainerPrefab);
+        MenuContainer.SetActive(false);
     }
 
-    // Update is called once per frame
-    void Update()
+    private void AppStateListener(Enum eventtype)
     {
         
+        switch ((AppManager.ApplicationState)eventtype)
+        {
+                case AppManager.ApplicationState.ApplicationPause:
+                    PauseActions();
+                break;
+                case AppManager.ApplicationState.LevelInProcess:
+                    OnContinuePlayActions();
+                break;
+        }
     }
+
+    private void PauseActions()
+    {
+        Debug.Log("PAUSED");
+    }
+
+    private void OnContinuePlayActions()
+    {
+        Debug.Log("PLAY");
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            ToggleMenu();
+        }
+       
+    }
+
+    private void ToggleMenu()
+    {
+        Managers.App.TogglePause();
+        MenuContainer.SetActive(!MenuContainer.activeSelf);
+        
+    }
+    
+    
 }

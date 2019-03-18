@@ -36,6 +36,11 @@ public class LocalizedText : BaseLocalizedComponent {
         text.text = Managers.Localization.GetLocalizedValue (key);
     }
 
+    public void setID(string ID)
+    {
+        key = ID;
+    }
+
 
     private void OnDestroy()
     {

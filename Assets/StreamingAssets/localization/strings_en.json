@@ -47,6 +47,26 @@
         {
             "key": "menu.back",
             "value": "Back"
+        },
+        {
+            "key": "menu.to_main_menu",
+            "value": "Return to main menu"
+        },
+        {
+            "key": "yes",
+            "value": "Yes"
+        },
+        {
+            "key": "No",
+            "value": "No"
+        },
+        {
+            "key": "menu.return_to_main_menu",
+            "value": "Back to the main menu? The current game will be interrupted."
+        },
+        {
+            "key": "menu.quit_the_game_quastion",
+            "value": "Quit the game? The current game will be interrupted."
         }
     ]
 }

@@ -33,19 +33,70 @@ public class MenuControl : MonoBehaviour
     
     [SerializeField]
     private Toggle FullscreenToggle;
-    
-    
-    public void NewGameStart() => Managers.App.LoadNewGameWithCoroutine();
+
+    private bool isMenuActive;
+
+    private GameObject MenuContainer;
+    private void Awake()
+    {
+
+        MenuContainer = transform.parent.gameObject;
+    }
+
+
+    private void OnEnable()
+    {
+        OpenMainPanel();//чтобы начать с главное панели
+    }
+
+    public void NewGameStart()
+    {
+        if (Managers.App.AppState != AppManager.ApplicationState.MainMenu)
+        {
+            DialogPanel.OpenChoiceDialog(
+                Managers.Localization.GetLocalizedValue("menu.return_to_main_menu"),
+                Managers.Localization.GetLocalizedValue("Yes"),
+                Managers.Localization.GetLocalizedValue("No"),
+                () => Managers.App.LoadMainMenuWithCoroutine(true), () =>
+                {
+                    DialogPanel.CloseDialogPanel();
+                });
+        }
+        else
+        {
+            Managers.App.LoadNewGameWithCoroutine();
+        }
+    } 
 
     public void PlayTestLevelPressed() => Managers.App.LoadLevelWithCoroutine(2);
     
     public void PlayContinue()
     {
-        Debug.Log("Продолжить игру с ранее сохраненного места");
-        Managers.App.ContinueGameWithCoroutine();
+        if (Managers.App.AppState != AppManager.ApplicationState.MainMenu)
+        {
+            MenuContainer.SetActive(false);
+            Managers.App.TogglePause();
+        }
+        else
+        {
+            Debug.Log("Продолжить игру с ранее сохраненного места");
+            Managers.App.ContinueGameWithCoroutine(); 
+        }
+        
     }
 
-    public void ExitGame() => Managers.App.ExitApp();
+    public void ExitGame()
+    {
+        
+        DialogPanel.OpenChoiceDialog(
+            Managers.Localization.GetLocalizedValue("menu.quit_the_game_quastion"),
+            Managers.Localization.GetLocalizedValue("Yes"),
+            Managers.Localization.GetLocalizedValue("No"),
+            () => Managers.App.ExitApp(), () =>
+            {
+                DialogPanel.CloseDialogPanel();
+            });
+    }
 
     public void OpenMainPanel()
     {
@@ -133,4 +184,6 @@ public class MenuControl : MonoBehaviour
             },
             ()=>DialogPanel.CloseDialogPanel());
     }
+
+  
 }

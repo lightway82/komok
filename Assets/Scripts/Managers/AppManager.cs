@@ -95,6 +95,7 @@ public class AppManager: BaseGameManager
     /// <returns>Вернет асинхронную операцию, можно показать прогресс итп</returns>
     public AsyncOperation LoadMainMenu()
     {
+       
         WantChangeSceneEvent.Invoke(1);
         var operation = SceneManager.LoadSceneAsync(1);
         operation.completed += OnMainMenuLoaded;
@@ -116,6 +117,7 @@ public class AppManager: BaseGameManager
         {
             yield return null;
         }
+        ClearPauseEffect();
         Debug.Log("Main menu  is loaded.");
         AppState = ApplicationState.MainMenu;
     }
@@ -132,23 +134,39 @@ public class AppManager: BaseGameManager
     
     private void OnMainMenuLoaded(AsyncOperation opp)
     {
+        ClearPauseEffect();
         Debug.Log("Main menu is loaded.");
         AppState = ApplicationState.MainMenu;
         opp.completed -= OnMainMenuLoaded;
     }
 
+    private void ClearPauseEffect()
+    {
+        Time.timeScale = 1;
+        timeScale = 1;
+    }
+
+    /// <summary>
+    /// Войти в паузу можно только с уровня(из других мест не сработает), выйти можно только в стэйт уровня.
+    /// Не применять в главном меню и в других местах отличных от уровня.
+    /// </summary>
     public void TogglePause()
     {
         switch (AppState)
         {
             case ApplicationState.ApplicationPause:
                 //сюда можно попасть только при установке паузы и с уровня, не из меню итп. Пауза поставиться только на уровне.
-                Time.timeScale = timeScale;
+                
                 AppState = ApplicationState.LevelInProcess;
+                Time.timeScale = timeScale;
                 break;
             case ApplicationState.LevelInProcess:
                 timeScale = Time.timeScale;//сохраним, тк может отличаться от 1 для эффектов
                 Time.timeScale = 0;
+                AppState = ApplicationState.ApplicationPause;
+                break;
+            default:
+                Debug.LogWarning("Пауза не применима для стэйта "+AppState);
                 break;
         }
     }
@@ -163,7 +181,7 @@ public class AppManager: BaseGameManager
     public IEnumerator LoadLevel(int index)
     {
         if (index < 4) index = 4;
-
+        
         yield return LoadLoadingScreenScene();
         yield return LoadLevelWithoutLoadingScreen(index);
     }
@@ -190,6 +208,7 @@ public class AppManager: BaseGameManager
     public IEnumerator LoadLevelWithoutLoadingScreen(int index)
     {
         if (index < 4) index = 4;
+       
         WantChangeSceneEvent.Invoke(index);
         var operation = SceneManager.LoadSceneAsync(index);//грузим уровень игровой
 
@@ -197,6 +216,7 @@ public class AppManager: BaseGameManager
         {
             yield return null;
         }
+        ClearPauseEffect();
         Debug.Log("Load  game level  is done.");
         AppState = ApplicationState.LevelInProcess;
         
@@ -208,6 +228,7 @@ public class AppManager: BaseGameManager
     /// <returns></returns>
     public IEnumerator LoadLoadingScreenScene()
     {  
+        
         WantChangeSceneEvent.Invoke(3);
         var operation = SceneManager.LoadSceneAsync(3);//грузим уровень с экраном загрузки
 
@@ -215,6 +236,7 @@ public class AppManager: BaseGameManager
         {
             yield return null;
         }
+        ClearPauseEffect();
         Debug.Log("Load  screen  is loaded.");
         AppState = ApplicationState.LoadingLevel;
         

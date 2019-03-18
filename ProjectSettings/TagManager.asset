@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Managers
   - GameWorld
+  - Menu
+  - MenuController
   layers:
   - Default
   - TransparentFX
