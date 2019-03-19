@@ -25,7 +25,7 @@ static class SceneAutoLoader
 	}
  
 	// Menu items to select the "master" scene and control whether or not to load it.
-	[MenuItem("File/Scene Autoload/Select Master Scene...")]
+	[MenuItem("Инструменты/Автозагрузка сцены/Выбрать старовую сцену...")]
 	private static void SelectMasterScene()
 	{
 		string masterScene = EditorUtility.OpenFilePanel("Select Master Scene", Application.dataPath, "unity");
@@ -37,23 +37,23 @@ static class SceneAutoLoader
 		}
 	}
  
-	[MenuItem("File/Scene Autoload/Load Master On Play", true)]
+	[MenuItem("Инструменты/Автозагрузка сцены/Загружать выбранную сцену при старте", true)]
 	private static bool ShowLoadMasterOnPlay()
 	{
 		return !LoadMasterOnPlay;
 	}
-	[MenuItem("File/Scene Autoload/Load Master On Play")]
+	[MenuItem("Инструменты/Автозагрузка сцены/Загружать выбранную сцену при старте")]
 	private static void EnableLoadMasterOnPlay()
 	{
 		LoadMasterOnPlay = true;
 	}
  
-	[MenuItem("File/Scene Autoload/Don't Load Master On Play", true)]
+	[MenuItem("Инструменты/Автозагрузка сцены/Не загружать выбранную сцену при старте", true)]
 	private static bool ShowDontLoadMasterOnPlay()
 	{
 		return LoadMasterOnPlay;
 	}
-	[MenuItem("File/Scene Autoload/Don't Load Master On Play")]
+	[MenuItem("Инструменты/Автозагрузка сцены/Не загружать выбранную сцену при старте")]
 	private static void DisableLoadMasterOnPlay()
 	{
 		LoadMasterOnPlay = false;
