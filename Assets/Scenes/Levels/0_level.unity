@@ -352,10 +352,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9610556bcc505a440812d7dc8605a818, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DistanceFromTarget: 10
-  CamHeight: 1
-  RotationDamp: 6
-  PosDamp: 6
+  CamHeight: 0
+  DistanceFromPlayer: 4
+  smoothTime: 0.3
+  sharpness: 0.1
 --- !u!1 &1215183090
 GameObject:
   m_ObjectHideFlags: 0
@@ -593,6 +593,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5482cef1811def4582706a0334249cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  HorizontalAxis: Horizontal
+  VerticalAxis: Vertical
+  ConstantForce: 319
+  BreakForce: 230
+  StartKickForce: 200
+  ConstantForceMultiplier: 2.21
+  InFlyMultiplier: 0.101
 --- !u!54 &2130640293
 Rigidbody:
   m_ObjectHideFlags: 0

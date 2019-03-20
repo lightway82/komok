@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class PlayerCameraController : MonoBehaviour
 {
@@ -11,24 +12,31 @@ public class PlayerCameraController : MonoBehaviour
     //Reference to local transform
     private Transform ThisTransform;
 
-    //Linear distance to maintain from target (in world units)
-    public float DistanceFromTarget = 10.0f;
+    
 
-    //Height of camera above target
-    public float CamHeight = 1f;
+    [SerializeField]
+    [Range(0,10)]
+    [Tooltip("Высота камеры")]
+    private float CamHeight = 1f;
+   
 
-    //Damping for rotation
-    public float RotationDamp = 4f;
-
-    //Damping for position можно создавать эффект приближения и отдаления
-    public float PosDamp = 4f;
+   
+    [SerializeField]
+    [Range(0,20)]
+    [Tooltip("Смещение камеры от игрока. Дистанция ближе которой она не приблизится")]
+    public float DistanceFromPlayer = 4f;
 
     private PlayerController _playerController;
+
+    private Camera camera;
+    
+    
     //---------------------------------------------------------------
     void Awake()
     {
+        camera = GetComponent<Camera>();
         //Get transform for camera
-        ThisTransform = GetComponent<Transform>();
+        ThisTransform = camera.transform;
         Target =  GameObject.FindWithTag("Player").transform;
         if(Target==null) Debug.LogError("Отсутствует Player");
         _playerController = Target.gameObject.GetComponent<PlayerController>();
@@ -39,41 +47,47 @@ public class PlayerCameraController : MonoBehaviour
     {
       
     }
+    [SerializeField]
+    [Range(0,1)]
+    [Tooltip("Время за которое камера догонит объект, если он остановится. Сглаживание камеры от скорости.")]
+    private float smoothTime = 0.3F;
+    private Vector3 velocity = Vector3.zero;
 
+    private Vector3 targetPos;
     //---------------------------------------------------------------
     // Update is called once per frame
     void LateUpdate () 
     {
-     /*   //Get output velocity
-        Vector3 Velocity = Vector3.zero;
+        
+//        if (_playerController.Velocity.magnitude > 0.04)
+//        {
+//            // ThisTransform.position = Target.position + moveDirection*30+new Vector3(1,10,1); 
+//            ThisTransform.position = Vector3.SmoothDamp(ThisTransform.position,
+//                Target.position - _playerController.MoveDirection * PosDamp + new Vector3(0, 3, 0),
+//                
+//                ref velocity, PosDamp * Time.deltaTime);   
+//        }
 
-        //Calculate rotation interpolate
-        ThisTransform.rotation = Quaternion.Slerp(ThisTransform.rotation, Target.rotation, RotationDamp * Time.deltaTime);
+       // if (_playerController.MoveDirection.magnitude > 0.04)
+        //{
+        //ThisTransform.position = Vector3.Lerp(ThisTransform.position, Target.position, 0.1f);
 
-        //Get new position
-        Vector3 Dest = ThisTransform.position = Vector3.SmoothDamp(ThisTransform.position, Target.position, ref Velocity, PosDamp * Time.deltaTime);
-
-        //Move away from target
-       ThisTransform.position = Dest - ThisTransform.forward * DistanceFromTarget;
-
-        //Set height
-        ThisTransform.position = new Vector3(ThisTransform.position.x, CamHeight, ThisTransform.position.z);
-
-        //Look at dest
-        ThisTransform.LookAt(Dest);
-        */
-       
-       
-
-        if (_playerController.moveDirection.magnitude > 0.04)
-        {
-            // ThisTransform.position = Target.position + moveDirection*30+new Vector3(1,10,1); 
-            ThisTransform.position = Vector3.Slerp(ThisTransform.position,
-                Target.position 
-                - _playerController.moveDirection * PosDamp*_playerController.moveDirection.magnitude + new Vector3(0, 3, 0), PosDamp * Time.deltaTime);   
-        }
+       // }
+        targetPos = Target.position - _playerController.MoveDirection * DistanceFromPlayer;
+        targetPos+=Vector3.Cross(_playerController.MoveDirection, Vector3.left) * CamHeight;//вызывает дергание, возможно устанавливается не верное направление вектора, что заставляет камеру отскакивать назад
+        ThisTransform.position = Vector3.SmoothDamp(ThisTransform.position,targetPos, ref velocity, smoothTime);
+        
       
         
-        ThisTransform.LookAt(Target);
+        // This constructs a rotation looking in the direction of our target,
+        Quaternion targetRotation = Quaternion.LookRotation(Target.position - ThisTransform.position);
+
+        // This blends the target rotation in gradually.
+        // Keep sharpness between 0 and 1 - lower values are slower/softer.
+        
+        ThisTransform.rotation = Quaternion.Lerp(ThisTransform.rotation, targetRotation, sharpness);
     }
+    
+    [Range(0.01f, 1)]
+    public float sharpness = 0.1f;
 }
