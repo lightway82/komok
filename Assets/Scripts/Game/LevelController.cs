@@ -44,7 +44,7 @@ public class LevelController : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Q))
+        if (Input.GetKeyDown(Application.isEditor?KeyCode.Q:KeyCode.Escape))
         {
             ToggleMenu();
         }
