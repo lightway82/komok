@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class PlayerManager : BaseGameManager
 {
+    
     public override void Initializations()
     {
        

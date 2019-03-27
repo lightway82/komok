@@ -9,6 +9,7 @@ TagManager:
   - Menu
   - MenuController
   - DynamicObjects
+  - Terrain
   layers:
   - Default
   - TransparentFX

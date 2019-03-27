@@ -80,6 +80,23 @@ public class PlayerController: MonoBehaviour
     [Tooltip("Множитель массы. Позволяет управлять зависимостью размера от массы. Физически корректно это 1. Возможно стоит увеличить  чтобы массу слишком не поднимать. Чем он выше тем силнее растем размер от массы(линейно)")]
     private float MassRadiusMultiplaier=1;
     
+    
+    [SerializeField]
+    [Range(0.01f,10)]
+    [Tooltip("Множитель сброса массы при ударе. Сброс линейно зависит от угла удара и массы объекта и этого коэфициента. Кратко говоря - это процент от общей массы которая сойдет при лобовом ударе в стену под прямым углом(примерно)")]
+    private float DropMassMultiplaier=0.3f;
+    
+    [SerializeField]
+    [Range(0.01f,1)]
+    [Tooltip("Процентное соотношение сбрасываемой массы от общей  в секунду при ускорении")]
+    private float DropMassAcceleratePersent=0.1f;
+    
+    [SerializeField]
+    [Range(0.01f,1)]
+    [Tooltip("Процентное соотношение набираемой массы при торможении от общей масссы в секунду")]
+    private float GetMassBreakPersent=0.1f;
+    
+    
     public float SphereRadius { get; private set; }
     
     private Vector3 _totalForce;
@@ -97,8 +114,15 @@ public class PlayerController: MonoBehaviour
     
     
 
-    public float SphereMass => _rigidbody.mass;
-    
+    public float SphereMass
+    {
+        get
+        {
+            return _rigidbody.mass;
+        }
+        private set { _rigidbody.mass = value; }
+    }
+
     /// <summary>
     /// Сумма сил сторонних. Силу сюда добавляются и вычитаются через AddForce и DeleteForce
     /// </summary>
@@ -148,7 +172,7 @@ public class PlayerController: MonoBehaviour
    
     private void OnCollisionStay(Collision other)
     {
-
+        
         IsOnGround = true;
     }
 
@@ -158,18 +182,51 @@ public class PlayerController: MonoBehaviour
 
     }
 
+    private void OnCollisionEnter(Collision other)
+    {
+        var terrain = other.gameObject.GetComponent<TerrainCollider>();
+        Vector3 velocity = other.relativeVelocity;
 
-   
+        DropMassByFall(other.impulse);
+        
+    }
+
+    private void DropMassByFall(Vector3 impulse)
+    {
+        var dropped = Mathf.Abs(Vector3.Dot(impulse.normalized * -1, _moveDirection.normalized)) * SphereMass *
+                      DropMassMultiplaier;
+        SphereMass -= dropped;
+        Debug.Log("Dropped "+dropped);
+
+    }
+
+    private void DropMassByAccelerate()
+    {
+        SphereMass -= SphereMass*DropMassAcceleratePersent*Time.deltaTime; 
+    }
+    
+    private void GetMassByAccelerate()
+    {
+        SphereMass += SphereMass*GetMassBreakPersent*Time.deltaTime; 
+    }
+
 
     private void FixedUpdate()
     {
         _totalForce = CalculateForcesWithControls() + OtherForce;
         _rigidbody.AddForce(_totalForce);
 
-        if(IsOnGround) _rigidbody.mass += Velocity.magnitude * Time.fixedDeltaTime * DistanceMassMultiplier;
+
+        if (IsOnGround) SphereMass += Velocity.magnitude * Time.fixedDeltaTime * DistanceMassMultiplier;
         
-        SetupRadius(SphereMass, SphereDensity);
+        
+        SetupRadius(SphereMass, SphereDensity);//пересчитаем радиус через массу и плотность. После всех изменений
+
+      
     }
+    
+    
+    
 
     private void SetupRadius(float mass, float density)
     {
@@ -192,10 +249,12 @@ public class PlayerController: MonoBehaviour
         {
             if (_moveVertical > 0)
             {
+                DropMassByAccelerate();
               return MoveDirection*ConstantForceMultiplier*ConstantForce*(IsOnGround?1:InFlyMultiplier);
             }
             else
             {
+                GetMassByAccelerate();
                 return MoveDirection*BreakMultipier*ConstantForce*-1*(IsOnGround?1:InFlyMultiplier);
             }
             
@@ -207,15 +266,20 @@ public class PlayerController: MonoBehaviour
             //ускоренный поворот или поворот с торможением. Сила направляется не влево и в право а + еще на 45 гразусов назад
             if (_moveVertical > 0)
             {
+                DropMassByAccelerate();
                return vector*ConstantForce*RotateAccelerateMultipier*RotateMultipier*0.5f*(IsOnGround?1:InFlyMultiplier);
             }
             else
             {
+                GetMassByAccelerate();
                return vector*ConstantForce*RotateBreakMultipier*RotateMultipier*0.5f*(IsOnGround?1:InFlyMultiplier);
             }
            
         }
     }
+    
+    
+    
 
 
     private readonly float sqrt_koeff = 1.0f / 3.0f;
