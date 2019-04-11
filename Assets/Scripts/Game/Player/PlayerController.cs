@@ -3,7 +3,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.Events;
+
+
+public class ShpereDeathEvent: UnityEvent{
+
+}
+
+
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(RespawnZonesController))]
 public class PlayerController: MonoBehaviour
 {
     
@@ -97,6 +106,27 @@ public class PlayerController: MonoBehaviour
     private float GetMassBreakPersent=0.1f;
     
     
+    [SerializeField]
+    [Range(0.01f,0.95f)]
+    [Tooltip("Процент от стартового радиуса ниже которого будет кончина шара.")]
+    private float DeathRadiusPersent=0.5f;
+    
+    [SerializeField]
+    [Tooltip("Максимальная масса")]
+    private float MaxMass=2000f;
+    
+    [SerializeField]
+    [Tooltip("Максимальная скорость")]
+    private float MaxVelocity=70f;
+    
+    
+    [Tooltip("Событие кончины шара")]
+    public ShpereDeathEvent shpereDeathEvent = new ShpereDeathEvent();
+    
+    
+    
+    
+    
     public float SphereRadius { get; private set; }
     
     private Vector3 _totalForce;
@@ -105,7 +135,11 @@ public class PlayerController: MonoBehaviour
 
     public Vector3 MoveDirection => _rigidbody.velocity.normalized;
     //public Vector3 MoveDirection => _moveDirection.normalized;
-    public Vector3 Velocity => _rigidbody.velocity;
+    public Vector3 Velocity
+    {
+        get => _rigidbody.velocity;
+        private set => _rigidbody.velocity = value;
+    }
 
     private Vector3 _otherForce;
 
@@ -116,11 +150,18 @@ public class PlayerController: MonoBehaviour
 
     public float SphereMass
     {
-        get
+        get => _rigidbody.mass;
+        private set
         {
-            return _rigidbody.mass;
+            if (!float.IsNaN(value) && !(value < 1))
+            {
+                if (value < MaxMass)
+                {
+                    _rigidbody.mass = value;
+                    SetupRadius(SphereMass, SphereDensity);
+                }
+            }
         }
-        private set { _rigidbody.mass = value; }
     }
 
     /// <summary>
@@ -135,26 +176,59 @@ public class PlayerController: MonoBehaviour
 
     public bool IsOnGround { get; private set; }
 
+    private GameObject _dynamics;//динамические объекты
+
+    private RespawnZonesController _respawnZonesController;
+    
     private void Awake()
     {
         //_collider = GetComponent<MeshCollider>();
         _rigidbody =  GetComponent<Rigidbody>();
+        _dynamics = GameObject.FindGameObjectWithTag("DynamicObjects");
+        _respawnZonesController = GetComponent<RespawnZonesController>();
+        
+        foreach (var deathZone in FindObjectsOfType<DeathZone>())
+        {
+            deathZone.ZoneEvent.AddListener(SphereDeath);
+        }
+            
     }
-    
+
     void Start()
     {
 
-        _rigidbody.mass = CalcSphereMass(SphereStartRadius, SphereDensity);//масссферы от ее радиуса и плотности
-        SetupRadius(SphereMass, SphereDensity);
-        
-        _rigidbody.AddForce(Vector3.forward*StartKickForce, ForceMode.Impulse);//стартовый пиннок под зад
-
-        _lastPos = transform.position;
+        InitSphere();
     }
 
     private Vector3 _moveDirection;
     private Vector3 _lastPos;
-   
+
+ 
+
+    private RespawnZone FindNearRespawn()
+    {
+       return _respawnZonesController.LastZone;
+    }
+
+
+    private void InitSphere()
+    {
+        SphereMass = CalcSphereMass(SphereStartRadius, SphereDensity);//масссферы от ее радиуса и плотности
+        _rigidbody.AddForce(Vector3.forward*StartKickForce, ForceMode.Impulse);//стартовый пиннок под зад
+        _lastPos = transform.position;
+        Velocity = Vector3.zero;
+    }
+
+
+    private void Respawn()
+    {
+        var respawn = FindNearRespawn();
+        transform.position = respawn.transform.position;
+        transform.rotation = respawn.transform.rotation;
+        InitSphere();
+
+    }
+
 
     void Update () 
     {
@@ -162,8 +236,39 @@ public class PlayerController: MonoBehaviour
         _lastPos = transform.position;
         _moveHorizontal = Input.GetAxis(HorizontalAxis);
         _moveVertical = Input.GetAxis(VerticalAxis);
+    }
+
+    
+#if UNITY_EDITOR
+    private void OnGUI()
+    {
+        
+       GUI.color=Color.green;
+       GUILayout.BeginVertical();
+       GUILayout.BeginHorizontal();
+       GUILayout.Label("Скорость:");
+       GUILayout.Label($"{Velocity.magnitude:f2}");
+       GUILayout.EndHorizontal();
+       GUILayout.BeginHorizontal();
+       GUILayout.Label("Радиус:");
+       GUILayout.Label($"{SphereRadius:f2}");
+       GUILayout.EndHorizontal();
+       GUILayout.BeginHorizontal();
+       GUILayout.Label("Радиус разрушения:");
+       GUILayout.Label($"{DeathRadiusPersent:f2}");
+       GUILayout.EndHorizontal();
+       GUILayout.BeginHorizontal();
+       GUILayout.Label("Масса:");
+       GUILayout.Label($"{SphereMass:f2}");
+       GUILayout.EndHorizontal();
+       
+       GUILayout.EndVertical();
+       
+        
         
     }
+#endif
+
 /*
  Можно  добавлять силы и применять их всегда в fixedupdate, в других местахтолько значение и вектор считать.
  Можно использовать вектор скорости, как обратную связь по силе.Использовать направление и значение.
@@ -175,7 +280,7 @@ public class PlayerController: MonoBehaviour
         
         IsOnGround = true;
     }
-
+    
     private void OnCollisionExit(Collision other)
     {
         IsOnGround = false;
@@ -191,95 +296,155 @@ public class PlayerController: MonoBehaviour
         
     }
 
+
+    private void SphereDeath()
+    {
+        Respawn();
+    }
+
     private void DropMassByFall(Vector3 impulse)
     {
         var dropped = Mathf.Abs(Vector3.Dot(impulse.normalized * -1, _moveDirection.normalized)) * SphereMass *
                       DropMassMultiplaier;
         SphereMass -= dropped;
-        Debug.Log("Dropped "+dropped);
+       // Debug.Log("Dropped "+dropped);
 
     }
 
     private void DropMassByAccelerate()
     {
-        SphereMass -= SphereMass*DropMassAcceleratePersent*Time.deltaTime; 
+        if(IsOnGround) SphereMass -= SphereMass*DropMassAcceleratePersent*Time.deltaTime; 
     }
     
     private void GetMassByAccelerate()
     {
-        SphereMass += SphereMass*GetMassBreakPersent*Time.deltaTime; 
+        if(IsOnGround) SphereMass += SphereMass*GetMassBreakPersent*Time.deltaTime; 
     }
 
 
+    
+   /// <summary>
+   /// Метод вызывает объект с которым столкнулся игрок, чтобы узначть что делать дальше и инициировать сброс массы и с корости игрока
+   /// </summary>
+   /// <param name="destroyableMass">Масса объекта</param>
+   /// <param name="strength">прочность объекта</param>
+   /// <returns>Степень поглощенной энергии от начальной</returns>
+    public float OnDestroyableTrigger(float destroyableMass, float strength, Collider other)
+   {
+       float normalizedImpactAngle = 0f;//должно влиять на расчет, тк учестьнадо касательные удары
+       Vector3 reflectDirection = Vector3.zero;//повлияет на направление при разрушении. При не разрушении там колидер повлияет
+       if (Physics.SphereCast(new Ray(transform.position-MoveDirection*SphereRadius, MoveDirection), SphereRadius*0.9f, out var hit, SphereRadius * 3, 1<<9, QueryTriggerInteraction.Collide))
+       {
+           normalizedImpactAngle = Mathf.Abs(Vector3.Dot(-hit.normal, MoveDirection));
+           reflectDirection = Vector3.Reflect(MoveDirection, hit.normal);
+       }
+       
+         Vector3 resultVelocity = SphereMass*Velocity/(destroyableMass+SphereMass);
+         float deltaE = resultVelocity.magnitude * 0.5f * Velocity.magnitude * destroyableMass*normalizedImpactAngle;
+         float E1 = SphereMass * Mathf.Pow(Velocity.magnitude, 2) / 2;
+
+         float resultMass = SphereMass - 2 * deltaE / Mathf.Pow(Velocity.magnitude, 2);
+         float dissipationRelation = deltaE/E1;//часть энергии потерянная на разрушение сферы
+
+         //считаем что игрок остановился, если энергия потери значительная и отношение потери к изначальной больше заданного в объекте
+         //иначе объект разрушается, те считаем что шар проходит сквозь объект с потерей массы и скорости.
+         //масса тут теряется чуть читерски, считаем что при неупругом столкновении вся погашеная энергия идет на потерю массы. Скорость и энергия получается с учетом того что оба объекта слиплись, а потом отлепился от этого основной шар.
+        
+            Debug.Log("Масса старая "+SphereMass +"Новая "+ resultMass+" dissipation "+dissipationRelation);
+         SphereMass = resultMass;
+         if (dissipationRelation > strength)
+         {
+             Velocity = reflectDirection*resultVelocity.magnitude;
+             
+         }
+         else
+         {
+             Velocity = resultVelocity;
+         }
+        return dissipationRelation;
+    }
+    
+    
     private void FixedUpdate()
     {
         _totalForce = CalculateForcesWithControls() + OtherForce;
         _rigidbody.AddForce(_totalForce);
-
-
-        if (IsOnGround) SphereMass += Velocity.magnitude * Time.fixedDeltaTime * DistanceMassMultiplier;
+        if ( Velocity.sqrMagnitude > MaxVelocity*MaxVelocity) Velocity = Velocity.normalized * MaxVelocity;//ограничение скорости
+        //набор массы от движения только при движении по земле и без ускорения и замедления 
+        if (IsOnGround && !IsAccelerateOrBreak())
+        {
+            SphereMass += Velocity.magnitude * Time.fixedDeltaTime * DistanceMassMultiplier;
+        }
         
         
-        SetupRadius(SphereMass, SphereDensity);//пересчитаем радиус через массу и плотность. После всех изменений
+            // SetupRadius(SphereMass, SphereDensity);//пересчитаем радиус через массу и плотность. После всех изменений
 
       
     }
-    
-    
-    
+
+    public bool IsAccelerate() => _moveVertical > 0;
+    public bool IsBreak() => _moveVertical < 0;
+
+    public bool IsAccelerateOrBreak() => _moveVertical > 0 || _moveVertical < 0;
 
     private void SetupRadius(float mass, float density)
     {
         SphereRadius = CalcSphereRadius(mass, density);
         //_collider.radius = SphereRadius;
         transform.localScale = new Vector3(2*SphereRadius,2*SphereRadius,2*SphereRadius);
+        if(SphereRadius< SphereStartRadius*DeathRadiusPersent) SphereDeath();
     }
 
 
     private Vector3 CalculateForcesWithControls()
     {
-        
+        //наш player вращается, как следствие мы ведем расчеты в мировых координатах.
         if (_moveHorizontal == 0 && _moveVertical == 0)
         {
-            return MoveDirection*ConstantForce;
-        }else if (_moveHorizontal != 0 && _moveVertical == 0)
+            return MoveDirection * ConstantForce;
+        }
+        else if (_moveHorizontal != 0 && _moveVertical == 0)
         {
-           return  Vector3.Cross(MoveDirection, Vector3.down).normalized*ConstantForce*RotateMultipier*_moveHorizontal*(IsOnGround?1:InFlyMultiplier);
-        }else if (_moveHorizontal == 0 && _moveVertical != 0)
+            return Vector3.Cross(MoveDirection, Vector3.down).normalized * ConstantForce * RotateMultipier *
+                   _moveHorizontal * (IsOnGround ? 1 : InFlyMultiplier);
+        }
+        else if (_moveHorizontal == 0 && _moveVertical != 0)
         {
             if (_moveVertical > 0)
             {
                 DropMassByAccelerate();
-              return MoveDirection*ConstantForceMultiplier*ConstantForce*(IsOnGround?1:InFlyMultiplier);
+                return MoveDirection * ConstantForceMultiplier * ConstantForce * (IsOnGround ? 1 : InFlyMultiplier);
             }
             else
             {
                 GetMassByAccelerate();
-                return MoveDirection*BreakMultipier*ConstantForce*-1*(IsOnGround?1:InFlyMultiplier);
+                return MoveDirection * BreakMultipier * ConstantForce * -1 * (IsOnGround ? 1 : InFlyMultiplier);
             }
-            
+
         }
         else
         {
-           // var vector = (Vector3.Cross(MoveDirection, Vector3.down).normalized+MoveDirection*_moveHorizontal) * _moveHorizontal;
+            // var vector = (Vector3.Cross(MoveDirection, Vector3.down).normalized+MoveDirection*_moveHorizontal) * _moveHorizontal;
             var vector = Vector3.Cross(MoveDirection, Vector3.down).normalized * _moveHorizontal;
             //ускоренный поворот или поворот с торможением. Сила направляется не влево и в право а + еще на 45 гразусов назад
             if (_moveVertical > 0)
             {
                 DropMassByAccelerate();
-               return vector*ConstantForce*RotateAccelerateMultipier*RotateMultipier*0.5f*(IsOnGround?1:InFlyMultiplier);
+                return vector * ConstantForce * RotateAccelerateMultipier * RotateMultipier * 0.5f *
+                       (IsOnGround ? 1 : InFlyMultiplier);
             }
             else
             {
                 GetMassByAccelerate();
-               return vector*ConstantForce*RotateBreakMultipier*RotateMultipier*0.5f*(IsOnGround?1:InFlyMultiplier);
+                return vector * ConstantForce * RotateBreakMultipier * RotateMultipier * 0.5f *
+                       (IsOnGround ? 1 : InFlyMultiplier);
             }
-           
+
         }
     }
-    
-    
-    
+
+
+
 
 
     private readonly float sqrt_koeff = 1.0f / 3.0f;
@@ -340,5 +505,12 @@ public class PlayerController: MonoBehaviour
     public void DeleteForce(Vector3 force)
     {
         _otherForce -= force;
+    }
+
+
+    private void OnDestroy()
+    {
+        
+        shpereDeathEvent.RemoveAllListeners();
     }
 }

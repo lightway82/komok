@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 584451271546334088}
   - component: {fileID: 584451271546334091}
   - component: {fileID: 584451271546334090}
-  - component: {fileID: 584451271546334087}
+  - component: {fileID: 1637680099369798272}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -90,7 +90,7 @@ SphereCollider:
   m_GameObject: {fileID: 584451271546334092}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
@@ -139,17 +139,16 @@ MonoBehaviour:
   DropMassMultiplaier: 0.3
   DropMassAcceleratePersent: 0.01
   GetMassBreakPersent: 0.01
---- !u!64 &584451271546334087
-MeshCollider:
+  DeathMass: 10
+--- !u!114 &1637680099369798272
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 584451271546334092}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Convex: 1
-  m_CookingOptions: 14
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d294834e80fddf54588db9595e19ee2b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

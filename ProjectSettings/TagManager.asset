@@ -10,6 +10,9 @@ TagManager:
   - MenuController
   - DynamicObjects
   - Terrain
+  - PlayerRespawn
+  - PlayerStart
+  - DeathZone
   layers:
   - Default
   - TransparentFX
@@ -20,7 +23,7 @@ TagManager:
   - 
   - 
   - PostProcessing
-  - 
+  - Destroyable
   - 
   - 
   - 

@@ -15,7 +15,7 @@ public class ForceZone : MonoBehaviour
     private Vector3 force;
     private Vector3 forceDirection;
     
-    [Header("Создает силу в указанном направлении.")]
+    [Header("Создает силу в указанном направлении. В мировой системе.")]
     [Header("На объекте можжет быть несколько коллайдеров.")]
     [Header("Силу создают только с параметром isTrigger")]
     [SerializeField]
@@ -24,31 +24,35 @@ public class ForceZone : MonoBehaviour
     
     [SerializeField]
     [Tooltip("Координата X вектора силы")]
-    [Range(0,1)]
+    [Range(-1,1)]
     private float x;
     
     [SerializeField]
     [Tooltip("Координата Y вектора силы")]
-    [Range(0,1)]
+    [Range(-1,1)]
     private float y;
     
     [SerializeField]
     [Tooltip("Координата Z вектора силы")]
-    [Range(0,1)]
+    [Range(-1,1)]
     private float z=1;
 
     
     [SerializeField]
     [Tooltip("Величина силы в ньютонах")]
     private float ForceValue;
+
+    private BoxCollider[] _colliders;
+    
     
     
     private void Awake()
     {
         player = GameObject.FindWithTag("Player")?.GetComponent<PlayerController>();
         if(player==null) Debug.LogError("Необходимо добавить игрока в сцену с скриптом PlayerController и тэгом Player");
-        forceDirection = new Vector3(x, y, z);
+        forceDirection = transform.TransformVector(new Vector3(x, y, z)).normalized;
         force = forceDirection*ForceValue;
+        _colliders = GetComponents<BoxCollider>();
     }
 
 
@@ -61,6 +65,7 @@ public class ForceZone : MonoBehaviour
         }else  player.AddForce(force);
     }
 
+  
     private void OnTriggerExit(Collider other)
     {
         if (!other.gameObject.tag.Equals("Player")) return;
@@ -87,10 +92,12 @@ public class ForceZone : MonoBehaviour
         }
         else
         {
-           var v =  new Vector3(x, y, z) * vectorLength+transform.position;
+           var v =  transform.TransformVector(new Vector3(x, y, z)).normalized*vectorLength+transform.position;
             Gizmos.DrawLine(transform.position,v);
             Gizmos.DrawWireSphere(v, 0.05f);
         }
+        
+      
         
     }
 

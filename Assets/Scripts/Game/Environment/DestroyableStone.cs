@@ -4,19 +4,14 @@ using UnityEngine;
 
 public class DestroyableStone : DestoyableObject
 {
-    public override void OnTriggerEnterAction()
+    public override void OnTriggerEnterAction(bool destroy)
     {
-        
-        
+
+        if (destroy)
+        {
+            gameObject.SetActive(false);
+        }
     }
 
-    public override void OnTriggerExitAction()
-    {
-       
-    }
-
-    public override void OnTriggerStayAction()
-    {
-        
-    }
+  
 }
