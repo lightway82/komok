@@ -26,9 +26,11 @@ public abstract  class DestoyableObject : MonoBehaviour
    private Collider[] _colliders;
    private PlayerController _player;
 
+   public static readonly int LAYER = 9;
+
    private void Awake()
    {
-      gameObject.layer = 9;
+      gameObject.layer = LAYER;
       _player = GameObject.FindWithTag("Player")?.GetComponent<PlayerController>();
       if(!_player) Debug.LogError("Отсутствует Player с скриптом PlayerController");
       _colliders = GetComponentsInChildren<Collider>();

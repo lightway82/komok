@@ -1,7 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿
 using UnityEngine;
-using UnityEngine.Experimental.UIElements;
+
 
 /// <summary>
 /// Задает силу действующую на игрока в зоне коллидера.

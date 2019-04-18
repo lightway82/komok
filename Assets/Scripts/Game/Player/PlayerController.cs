@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.Events;
+
 
 
 public class ShpereDeathEvent: UnityEvent{
@@ -92,8 +90,8 @@ public class PlayerController: MonoBehaviour
     
     [SerializeField]
     [Range(0.01f,10)]
-    [Tooltip("Множитель сброса массы при ударе. Сброс линейно зависит от угла удара и массы объекта и этого коэфициента. Кратко говоря - это процент от общей массы которая сойдет при лобовом ударе в стену под прямым углом(примерно)")]
-    private float DropMassMultiplaier=0.3f;
+    [Tooltip("Чем ближе выше тем больше будет потеря массы при ударе.")]
+    private float DropMassMultiplaier=2f;
     
     [SerializeField]
     [Range(0.01f,1)]
@@ -142,7 +140,7 @@ public class PlayerController: MonoBehaviour
     }
 
     private Vector3 _otherForce;
-
+   
     //private MeshCollider _collider;
     
     
@@ -174,15 +172,36 @@ public class PlayerController: MonoBehaviour
     private float _moveHorizontal;
     private float _moveVertical;
 
-    public bool IsOnGround { get; private set; }
+    
+    
+   
+    private GroundEvent _groundEvent=new GroundEvent();
+
+    /// <summary>
+    /// Событие изменения состояния игрока на повехности - он летит или на чем-то стоит или во что-то ударился в полете
+    /// </summary>
+    public GroundEvent OnGroundEvent { get=>_groundEvent;}
+    
+    private bool _isOnGround;
+    public bool IsOnGround
+    {
+        get => _isOnGround;
+        private set
+        {
+            if( _isOnGround != value)_groundEvent.Invoke(value, transform.position.y);//обеспечит смену режимов отслеживателя,а в udate фиксирует только полет
+            _isOnGround = value;
+           
+        } 
+    }
 
     private GameObject _dynamics;//динамические объекты
 
     private RespawnZonesController _respawnZonesController;
     
+    private HeightSantinel _heightSantinel;
     private void Awake()
     {
-        //_collider = GetComponent<MeshCollider>();
+        _heightSantinel= new HeightSantinel(OnGroundEvent);
         _rigidbody =  GetComponent<Rigidbody>();
         _dynamics = GameObject.FindGameObjectWithTag("DynamicObjects");
         _respawnZonesController = GetComponent<RespawnZonesController>();
@@ -196,14 +215,14 @@ public class PlayerController: MonoBehaviour
 
     void Start()
     {
-
-        InitSphere();
+        Respawn();
     }
 
     private Vector3 _moveDirection;
     private Vector3 _lastPos;
 
- 
+    
+  
 
     private RespawnZone FindNearRespawn()
     {
@@ -213,10 +232,11 @@ public class PlayerController: MonoBehaviour
 
     private void InitSphere()
     {
+        Velocity = Vector3.zero;
         SphereMass = CalcSphereMass(SphereStartRadius, SphereDensity);//масссферы от ее радиуса и плотности
         _rigidbody.AddForce(Vector3.forward*StartKickForce, ForceMode.Impulse);//стартовый пиннок под зад
         _lastPos = transform.position;
-        Velocity = Vector3.zero;
+        
     }
 
 
@@ -232,14 +252,22 @@ public class PlayerController: MonoBehaviour
 
     void Update () 
     {
-        _moveDirection = (transform.position -_lastPos);
+        _moveDirection = transform.position -_lastPos;
         _lastPos = transform.position;
         _moveHorizontal = Input.GetAxis(HorizontalAxis);
         _moveVertical = Input.GetAxis(VerticalAxis);
+
+        if (!IsOnGround)
+        {
+            _groundEvent.Invoke(IsOnGround, _lastPos.y);
+        }
+
+        
     }
 
     
 #if UNITY_EDITOR
+    private float massDropped;
     private void OnGUI()
     {
         
@@ -261,7 +289,11 @@ public class PlayerController: MonoBehaviour
        GUILayout.Label("Масса:");
        GUILayout.Label($"{SphereMass:f2}");
        GUILayout.EndHorizontal();
-       
+       GUILayout.BeginHorizontal();
+       GUILayout.Label("Сброс массы о землю: ");
+       GUI.color=Color.red;
+       GUILayout.Label($"{massDropped:f2}");
+       GUILayout.EndHorizontal();
        GUILayout.EndVertical();
        
         
@@ -275,11 +307,7 @@ public class PlayerController: MonoBehaviour
  Можно корректировать силу исходя из реакции вектора скорости
  */
    
-    private void OnCollisionStay(Collision other)
-    {
-        
-        IsOnGround = true;
-    }
+    
     
     private void OnCollisionExit(Collision other)
     {
@@ -289,10 +317,11 @@ public class PlayerController: MonoBehaviour
 
     private void OnCollisionEnter(Collision other)
     {
-        var terrain = other.gameObject.GetComponent<TerrainCollider>();
-        Vector3 velocity = other.relativeVelocity;
+        IsOnGround = true;
+       // var terrain = other.gameObject.GetComponent<TerrainCollider>();
+      //  Vector3 velocity = other.relativeVelocity;
 
-        DropMassByFall(other.impulse);
+        DropMassByFallAndStaticCollision(other);
         
     }
 
@@ -302,14 +331,7 @@ public class PlayerController: MonoBehaviour
         Respawn();
     }
 
-    private void DropMassByFall(Vector3 impulse)
-    {
-        var dropped = Mathf.Abs(Vector3.Dot(impulse.normalized * -1, _moveDirection.normalized)) * SphereMass *
-                      DropMassMultiplaier;
-        SphereMass -= dropped;
-       // Debug.Log("Dropped "+dropped);
-
-    }
+   
 
     private void DropMassByAccelerate()
     {
@@ -338,48 +360,57 @@ public class PlayerController: MonoBehaviour
            normalizedImpactAngle = Mathf.Abs(Vector3.Dot(-hit.normal, MoveDirection));
            reflectDirection = Vector3.Reflect(MoveDirection, hit.normal);
        }
-       
-         Vector3 resultVelocity = SphereMass*Velocity/(destroyableMass+SphereMass);
-         float deltaE = resultVelocity.magnitude * 0.5f * Velocity.magnitude * destroyableMass*normalizedImpactAngle;
-         float E1 = SphereMass * Mathf.Pow(Velocity.magnitude, 2) / 2;
-
-         float resultMass = SphereMass - 2 * deltaE / Mathf.Pow(Velocity.magnitude, 2);
+         
+         float vm = Mathf.Clamp(Velocity.magnitude, 0.01f,  MaxVelocity);
+       //угол компенсирует потерю скорость от углового удара
+         float normalVelocity = SphereMass*vm*normalizedImpactAngle/(destroyableMass+SphereMass);
+         float deltaE = normalVelocity * 0.5f * vm * destroyableMass;
+        
+         float E1 = SphereMass * Mathf.Pow(vm, 2) / 2;
+         float deltaMass= 2 * deltaE / Mathf.Pow(vm, 2);
+         float resultMass = SphereMass - Mathf.Clamp(deltaMass,0f ,SphereMass);
          float dissipationRelation = deltaE/E1;//часть энергии потерянная на разрушение сферы
 
          //считаем что игрок остановился, если энергия потери значительная и отношение потери к изначальной больше заданного в объекте
          //иначе объект разрушается, те считаем что шар проходит сквозь объект с потерей массы и скорости.
          //масса тут теряется чуть читерски, считаем что при неупругом столкновении вся погашеная энергия идет на потерю массы. Скорость и энергия получается с учетом того что оба объекта слиплись, а потом отлепился от этого основной шар.
         
-            Debug.Log("Масса старая "+SphereMass +"Новая "+ resultMass+" dissipation "+dissipationRelation);
+           // Debug.Log("Масса старая "+SphereMass +"Новая "+ resultMass+" dissipation "+dissipationRelation);
          SphereMass = resultMass;
-         if (dissipationRelation > strength)
-         {
-             Velocity = reflectDirection*resultVelocity.magnitude;
+         //всегда отскочим, но это зависит от силы и направления удара, также результат от разрушения объекта.
+         Velocity = reflectDirection*(vm - vm*normalVelocity);
              
-         }
-         else
-         {
-             Velocity = resultVelocity;
-         }
+         Debug.Log("Сброс массы от столкновения: сброшено= "+deltaMass+" диссипация = "+dissipationRelation+" Угол= "+normalizedImpactAngle);
         return dissipationRelation;
     }
-    
-    
-    private void FixedUpdate()
+
+
+   private void DropMassByFallAndStaticCollision(Collision obj)
+   {
+       //исключаем из расчета разрушаемые объекты
+       if(obj.gameObject.layer== DestoyableObject.LAYER) return;
+       Debug.Log("Угол "+Vector3.Dot(MoveDirection, -obj.GetContact(0).normal));
+       float deltaMass = SphereMass*(1 - 0.5f*(float)(Math.Tanh(0.5*(10*Velocity.magnitude/obj.relativeVelocity.magnitude-5))+1f))*DropMassMultiplaier;
+       SphereMass -= Mathf.Clamp(deltaMass,0f, SphereMass);
+     
+     
+       
+#if UNITY_EDITOR
+       massDropped = Mathf.Clamp(deltaMass,0f, SphereMass);
+#endif
+   }
+
+
+   private void FixedUpdate()
     {
         _totalForce = CalculateForcesWithControls() + OtherForce;
         _rigidbody.AddForce(_totalForce);
         if ( Velocity.sqrMagnitude > MaxVelocity*MaxVelocity) Velocity = Velocity.normalized * MaxVelocity;//ограничение скорости
-        //набор массы от движения только при движении по земле и без ускорения и замедления 
+        //набор массы от движения только при движении по земле и без ускорения и замедления, при ускорении и замедлении в  CalculateForcesWithControls()
         if (IsOnGround && !IsAccelerateOrBreak())
         {
             SphereMass += Velocity.magnitude * Time.fixedDeltaTime * DistanceMassMultiplier;
         }
-        
-        
-            // SetupRadius(SphereMass, SphereDensity);//пересчитаем радиус через массу и плотность. После всех изменений
-
-      
     }
 
     public bool IsAccelerate() => _moveVertical > 0;
@@ -449,6 +480,7 @@ public class PlayerController: MonoBehaviour
 
     private readonly float sqrt_koeff = 1.0f / 3.0f;
    
+
     private float CalcSphereRadius(float mass, float density)
     {
         return Mathf.Pow(mass / (density * 4.19f), sqrt_koeff)*MassRadiusMultiplaier;
@@ -512,5 +544,6 @@ public class PlayerController: MonoBehaviour
     {
         
         shpereDeathEvent.RemoveAllListeners();
+        _groundEvent.RemoveAllListeners();
     }
 }
