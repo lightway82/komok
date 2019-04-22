@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
@@ -28,9 +29,17 @@ public class HeightSantinel
     /// <summary>
     /// Высота с которой упало тело(от точки перегиба траектории падения)
     /// Максимальная высота - это относительная высота, не абсолютная.
-    /// Можно считывать в любой момент, но наиболее точное значение после  события о приземлении
+    /// Можно считывать в любой момент, но это всегда высота последнего падения
     /// </summary>
-    public float MaxHeight { get; private set; }
+    public float MaxHeight
+    {
+        get
+        {
+            if (!IsInFly) return _maxHeight;
+            throw new Exception("Читать высоту нужно после окончания полета");
+        } 
+        private set => _maxHeight = value;
+    }
 
     public float StartupHeight { get; private set; }
 
@@ -42,7 +51,9 @@ public class HeightSantinel
         groundEvent.AddListener(OnGroundedListener);
     }
 
-   
+
+    private float _maxHeightCalc;
+    private float _maxHeight;
 
     private void OnGroundedListener(bool isOnGround, float height)
     {
@@ -51,15 +62,19 @@ public class HeightSantinel
             IsInFly = false;
             EndFlyHeight = height;
 
+            var h  = _maxHeightCalc - EndFlyHeight;//если меньше нуля, то небы ло падение с высоты, был полет и мы уткнулись на что-то в подъеме или был взлет с падением на верхатуру
+            if (h < 0) MaxHeight = 0;
+            else MaxHeight = h;
+
         }else  if (!IsInFly && !isOnGround)
         {    //начало полета
             IsInFly = true;
             StartupHeight =height;
-            MaxHeight = height;
+            _maxHeightCalc = height;
         }
         else
         { 
-            if (height > MaxHeight) MaxHeight = height;
+            if (height > _maxHeightCalc) _maxHeightCalc = height;
             
         }
         

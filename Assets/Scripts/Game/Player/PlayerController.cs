@@ -89,19 +89,19 @@ public class PlayerController: MonoBehaviour
     
     
     [SerializeField]
-    [Range(0.01f,10)]
+    [Range(0.01f,1)]
     [Tooltip("Чем ближе выше тем больше будет потеря массы при ударе.")]
-    private float DropMassMultiplaier=2f;
+    private float DropMassMultiplaier=0.6f;
     
     [SerializeField]
-    [Range(0.01f,1)]
-    [Tooltip("Процентное соотношение сбрасываемой массы от общей  в секунду при ускорении")]
-    private float DropMassAcceleratePersent=0.1f;
+    [Range(0.1f,3)]
+    [Tooltip("Сброс прямопропорционален ускорению, это коэфициент этого процесса. те сколько килограмм  за единицу ускорения в секунду!")]
+    private float DropMassAccelerateCoeff=0.3f;
     
     [SerializeField]
-    [Range(0.01f,1)]
-    [Tooltip("Процентное соотношение набираемой массы при торможении от общей масссы в секунду")]
-    private float GetMassBreakPersent=0.1f;
+    [Range(0.1f,3)]
+    [Tooltip("Набор массы прямопропорционален ускорению(отрицательному), это коэфициент этого процесса. те сколько килограмм  за единицу ускорения в секунду!")]
+    private float GetMassBreakCoeff=0.5f;
     
     
     [SerializeField]
@@ -142,10 +142,10 @@ public class PlayerController: MonoBehaviour
     private Vector3 _otherForce;
    
     //private MeshCollider _collider;
-    
-    
-    
 
+
+
+    private bool _isMassInited;
     public float SphereMass
     {
         get => _rigidbody.mass;
@@ -155,8 +155,10 @@ public class PlayerController: MonoBehaviour
             {
                 if (value < MaxMass)
                 {
+                    if(_isMassInited)ConstantForce *= value/SphereMass;//перерасчет силы, если это второе и более обращение к установке массы(тк ранее масса некорректна)
                     _rigidbody.mass = value;
-                    SetupRadius(SphereMass, SphereDensity);
+                    _isMassInited = true;
+                    SetupRadius(value, SphereDensity);
                 }
             }
         }
@@ -262,7 +264,9 @@ public class PlayerController: MonoBehaviour
             _groundEvent.Invoke(IsOnGround, _lastPos.y);
         }
 
-        
+        if (Input.GetAxis("Reset") > 0) Respawn();
+
+
     }
 
     
@@ -294,6 +298,12 @@ public class PlayerController: MonoBehaviour
        GUI.color=Color.red;
        GUILayout.Label($"{massDropped:f2}");
        GUILayout.EndHorizontal();
+       GUI.color=Color.green;
+       GUILayout.BeginHorizontal();
+       GUILayout.Label("Сила природы: ");
+       GUILayout.Label($"{ConstantForce:f2}");
+       GUILayout.EndHorizontal();
+       
        GUILayout.EndVertical();
        
         
@@ -306,8 +316,8 @@ public class PlayerController: MonoBehaviour
  Можно использовать вектор скорости, как обратную связь по силе.Использовать направление и значение.
  Можно корректировать силу исходя из реакции вектора скорости
  */
-   
-    
+
+    private bool _isStay;
     
     private void OnCollisionExit(Collision other)
     {
@@ -325,22 +335,16 @@ public class PlayerController: MonoBehaviour
         
     }
 
+    private void OnCollisionStay(Collision other)
+    {
+      
+        if(!IsOnGround) IsOnGround = true;//это для случая, когда игрок касается земли и чего-то еще одновременно и потом выходит из колидера предмета, но земли все еще касается.
+    }
+
 
     private void SphereDeath()
     {
         Respawn();
-    }
-
-   
-
-    private void DropMassByAccelerate()
-    {
-        if(IsOnGround) SphereMass -= SphereMass*DropMassAcceleratePersent*Time.deltaTime; 
-    }
-    
-    private void GetMassByAccelerate()
-    {
-        if(IsOnGround) SphereMass += SphereMass*GetMassBreakPersent*Time.deltaTime; 
     }
 
 
@@ -380,7 +384,7 @@ public class PlayerController: MonoBehaviour
          //всегда отскочим, но это зависит от силы и направления удара, также результат от разрушения объекта.
          Velocity = reflectDirection*(vm - vm*normalVelocity);
              
-         Debug.Log("Сброс массы от столкновения: сброшено= "+deltaMass+" диссипация = "+dissipationRelation+" Угол= "+normalizedImpactAngle);
+              Debug.Log("Сброс массы от столкновения: сброшено= "+deltaMass+" диссипация = "+dissipationRelation+" Угол= "+normalizedImpactAngle);
         return dissipationRelation;
     }
 
@@ -389,18 +393,30 @@ public class PlayerController: MonoBehaviour
    {
        //исключаем из расчета разрушаемые объекты
        if(obj.gameObject.layer== DestoyableObject.LAYER) return;
-       Debug.Log("Угол "+Vector3.Dot(MoveDirection, -obj.GetContact(0).normal));
-       float deltaMass = SphereMass*(1 - 0.5f*(float)(Math.Tanh(0.5*(10*Velocity.magnitude/obj.relativeVelocity.magnitude-5))+1f))*DropMassMultiplaier;
+       float normalizedImpactAngle =  Mathf.Abs(Vector3.Dot(obj.impulse.normalized * -1, _moveDirection.normalized));
+
+       float step = Mathf.Log10(_heightSantinel.MaxHeight);
+       if (step < 1) step = 0.5f;
+       
+       float v_v = (Velocity.magnitude / obj.relativeVelocity.magnitude) *
+                   (1 - Mathf.Pow(Mathf.Clamp(normalizedImpactAngle, 0.03f, 0.98f),2));
+       v_v = Mathf.Pow(v_v, step);
+       float deltaMass = SphereMass*(1 - 0.5f*(float)(Math.Tanh(0.5*(10*v_v-5))+1f))
+                                   *DropMassMultiplaier;//учет урона от высоты
+       
+       
+       
        SphereMass -= Mathf.Clamp(deltaMass,0f, SphereMass);
-     
-     
+      // Debug.Log("mass "+SphereMass+" Угол "+normalizedImpactAngle+" delta mass "+deltaMass+" vv "+v_v+" step "+step+" v2/v1 "+Velocity.magnitude / obj.relativeVelocity.magnitude+" height "+_heightSantinel.MaxHeight);
+         
        
 #if UNITY_EDITOR
        massDropped = Mathf.Clamp(deltaMass,0f, SphereMass);
 #endif
    }
 
-
+   private float _lastVelosity;
+   
    private void FixedUpdate()
     {
         _totalForce = CalculateForcesWithControls() + OtherForce;
@@ -411,6 +427,8 @@ public class PlayerController: MonoBehaviour
         {
             SphereMass += Velocity.magnitude * Time.fixedDeltaTime * DistanceMassMultiplier;
         }
+
+        _lastVelosity = Velocity.magnitude;
     }
 
     public bool IsAccelerate() => _moveVertical > 0;
@@ -425,7 +443,39 @@ public class PlayerController: MonoBehaviour
         transform.localScale = new Vector3(2*SphereRadius,2*SphereRadius,2*SphereRadius);
         if(SphereRadius< SphereStartRadius*DeathRadiusPersent) SphereDeath();
     }
+    
+    
+    private void DropMassByAccelerate()
+    {
+        
 
+        if (IsOnGround)
+        {
+            
+            var vm = Velocity.magnitude;
+            
+            if(vm<1 || vm > MaxVelocity-1)return;
+            var acc = (vm - _lastVelosity) / Time.fixedDeltaTime;
+            if (acc < 0) return;//если мы резко тормознули, но жали ускорение, значит столкновение и не надо применять тут коэфициент
+            SphereMass -= DropMassAccelerateCoeff * acc;
+            Debug.Log("от ускорения "+ (  DropMassAccelerateCoeff * acc)+" acc "+acc);
+        }
+        //зависит от ускорения - если оно положительно, то сброс если отрицательно то набор
+    }
+    
+    private void GetMassByAccelerate()
+    {
+        if (IsOnGround)
+        {
+            var vm = Velocity.magnitude;
+            if(vm < 1)return;
+            var acc = (vm - _lastVelosity) / Time.fixedDeltaTime;
+            if (acc > 0) return;//если реально не замедляемся, то не набираем
+            SphereMass -= vm/MaxVelocity*GetMassBreakCoeff * acc;//ускорение тут отрицательно поэтому минус стоит у массы
+            Debug.Log("от замедления "+ (vm/MaxVelocity*GetMassBreakCoeff * acc)+" acc "+acc);
+        }
+        //зависит от ускорения - если оно положительно, то сброс если отрицательно то набор
+    }
 
     private Vector3 CalculateForcesWithControls()
     {
@@ -458,6 +508,7 @@ public class PlayerController: MonoBehaviour
             // var vector = (Vector3.Cross(MoveDirection, Vector3.down).normalized+MoveDirection*_moveHorizontal) * _moveHorizontal;
             var vector = Vector3.Cross(MoveDirection, Vector3.down).normalized * _moveHorizontal;
             //ускоренный поворот или поворот с торможением. Сила направляется не влево и в право а + еще на 45 гразусов назад
+         
             if (_moveVertical > 0)
             {
                 DropMassByAccelerate();
@@ -466,7 +517,7 @@ public class PlayerController: MonoBehaviour
             }
             else
             {
-                GetMassByAccelerate();
+               GetMassByAccelerate();
                 return vector * ConstantForce * RotateBreakMultipier * RotateMultipier * 0.5f *
                        (IsOnGround ? 1 : InFlyMultiplier);
             }
