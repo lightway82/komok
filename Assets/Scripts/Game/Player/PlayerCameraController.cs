@@ -140,7 +140,7 @@ public class PlayerCameraController : MonoBehaviour
         // This blends the target rotation in gradually.
         // Keep sharpness between 0 and 1 - lower values are slower/softer.
         
-        ThisTransform.rotation = Quaternion.Lerp(ThisTransform.rotation, targetRotation, sharpness);
+        ThisTransform.rotation = Quaternion.Lerp(ThisTransform.rotation, targetRotation, sharpness*Time.deltaTime);
     }
     
     public float distance = 5.0f;

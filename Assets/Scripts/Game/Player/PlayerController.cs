@@ -120,10 +120,19 @@ public class PlayerController: MonoBehaviour
     
     [Tooltip("Событие кончины шара")]
     public ShpereDeathEvent shpereDeathEvent = new ShpereDeathEvent();
+
+
+    private float _shield;
     
+    [Tooltip("Стартовое значение брони. Броня скрадывает потерю массы согласно ее значению. Например, если потеря массы 100, а броня 0.5, то будет потеряно 50 массы вместо 100. Броня уменьшится пропрорционально отношению массы , которая должна быть сброшена к общей массе шара, те фактически силе удара")]
+    [SerializeField]
+    [Range(0,1)]
+    private float StartShield;
     
-    
-    
+    [Tooltip("Щит постепенно повышается от движения(шар утрамбовывается). Повышение зависит от набора массы при движении. Этот коэфициент позволяет варировать скорость этого процесса.")]
+    [SerializeField]
+    [Range(0,1)]
+    private float ShieldIncreaseByMoving=0.1f;
     
     public float SphereRadius { get; private set; }
     
@@ -244,6 +253,7 @@ public class PlayerController: MonoBehaviour
 
     private void Respawn()
     {
+        _shield = StartShield;
         var respawn = FindNearRespawn();
         transform.position = respawn.transform.position;
         transform.rotation = respawn.transform.rotation;
@@ -303,6 +313,11 @@ public class PlayerController: MonoBehaviour
        GUILayout.Label("Сила природы: ");
        GUILayout.Label($"{ConstantForce:f2}");
        GUILayout.EndHorizontal();
+      
+       GUILayout.BeginHorizontal();
+       GUILayout.Label("Броня: ");
+       GUILayout.Label($"{_shield:f2}");
+       GUILayout.EndHorizontal();
        
        GUILayout.EndVertical();
        
@@ -347,9 +362,21 @@ public class PlayerController: MonoBehaviour
         Respawn();
     }
 
+    private float ApplyShieldToImpact(float deltaMass)
+    {
+        float resDeltaMass = deltaMass * (1 - _shield);
+              _shield *= 1 - deltaMass / SphereMass;
+        return resDeltaMass;
+    }
 
+    private void IncreaseShieldByMass(float deltaMass, float persent)
+    {
+        _shield = Mathf.Clamp(_shield + persent * deltaMass / SphereMass, 0f, 1f);
+    }
     
-   /// <summary>
+   
+
+    /// <summary>
    /// Метод вызывает объект с которым столкнулся игрок, чтобы узначть что делать дальше и инициировать сброс массы и с корости игрока
    /// </summary>
    /// <param name="destroyableMass">Масса объекта</param>
@@ -372,7 +399,7 @@ public class PlayerController: MonoBehaviour
         
          float E1 = SphereMass * Mathf.Pow(vm, 2) / 2;
          float deltaMass= 2 * deltaE / Mathf.Pow(vm, 2);
-         float resultMass = SphereMass - Mathf.Clamp(deltaMass,0f ,SphereMass);
+         float resultMass = SphereMass - ApplyShieldToImpact( Mathf.Clamp(deltaMass,0f ,SphereMass));
          float dissipationRelation = deltaE/E1;//часть энергии потерянная на разрушение сферы
 
          //считаем что игрок остановился, если энергия потери значительная и отношение потери к изначальной больше заданного в объекте
@@ -380,7 +407,9 @@ public class PlayerController: MonoBehaviour
          //масса тут теряется чуть читерски, считаем что при неупругом столкновении вся погашеная энергия идет на потерю массы. Скорость и энергия получается с учетом того что оба объекта слиплись, а потом отлепился от этого основной шар.
         
            // Debug.Log("Масса старая "+SphereMass +"Новая "+ resultMass+" dissipation "+dissipationRelation);
-         SphereMass = resultMass;
+       
+           
+           SphereMass =resultMass;
          //всегда отскочим, но это зависит от силы и направления удара, также результат от разрушения объекта.
          Velocity = reflectDirection*(vm - vm*normalVelocity);
              
@@ -403,15 +432,16 @@ public class PlayerController: MonoBehaviour
        v_v = Mathf.Pow(v_v, step);
        float deltaMass = SphereMass*(1 - 0.5f*(float)(Math.Tanh(0.5*(10*v_v-5))+1f))
                                    *DropMassMultiplaier;//учет урона от высоты
+
+       deltaMass = ApplyShieldToImpact(Mathf.Clamp(deltaMass, 0f, SphereMass));
+     
        
-       
-       
-       SphereMass -= Mathf.Clamp(deltaMass,0f, SphereMass);
+       SphereMass -= deltaMass;
       // Debug.Log("mass "+SphereMass+" Угол "+normalizedImpactAngle+" delta mass "+deltaMass+" vv "+v_v+" step "+step+" v2/v1 "+Velocity.magnitude / obj.relativeVelocity.magnitude+" height "+_heightSantinel.MaxHeight);
          
        
 #if UNITY_EDITOR
-       massDropped = Mathf.Clamp(deltaMass,0f, SphereMass);
+       massDropped = deltaMass;
 #endif
    }
 
@@ -425,7 +455,9 @@ public class PlayerController: MonoBehaviour
         //набор массы от движения только при движении по земле и без ускорения и замедления, при ускорении и замедлении в  CalculateForcesWithControls()
         if (IsOnGround && !IsAccelerateOrBreak())
         {
-            SphereMass += Velocity.magnitude * Time.fixedDeltaTime * DistanceMassMultiplier;
+            float deltaMass = Velocity.magnitude * Time.fixedDeltaTime * DistanceMassMultiplier;
+            IncreaseShieldByMass(deltaMass, ShieldIncreaseByMoving);
+            SphereMass += deltaMass;
         }
 
         _lastVelosity = Velocity.magnitude;
@@ -455,10 +487,12 @@ public class PlayerController: MonoBehaviour
             var vm = Velocity.magnitude;
             
             if(vm<1 || vm > MaxVelocity-1)return;
-            var acc = (vm - _lastVelosity) / Time.fixedDeltaTime;
+            var acc = (vm - _lastVelosity) / Time.fixedDeltaTime;//производная скорости - ускорение
             if (acc < 0) return;//если мы резко тормознули, но жали ускорение, значит столкновение и не надо применять тут коэфициент
+            float deltaMass = DropMassAccelerateCoeff * acc;
+            ApplyShieldToImpact(deltaMass);
             SphereMass -= DropMassAccelerateCoeff * acc;
-            Debug.Log("от ускорения "+ (  DropMassAccelerateCoeff * acc)+" acc "+acc);
+           
         }
         //зависит от ускорения - если оно положительно, то сброс если отрицательно то набор
     }
@@ -471,8 +505,11 @@ public class PlayerController: MonoBehaviour
             if(vm < 1)return;
             var acc = (vm - _lastVelosity) / Time.fixedDeltaTime;
             if (acc > 0) return;//если реально не замедляемся, то не набираем
-            SphereMass -= vm/MaxVelocity*GetMassBreakCoeff * acc;//ускорение тут отрицательно поэтому минус стоит у массы
-            Debug.Log("от замедления "+ (vm/MaxVelocity*GetMassBreakCoeff * acc)+" acc "+acc);
+
+            float deltaMass = vm / MaxVelocity * GetMassBreakCoeff * acc;
+            IncreaseShieldByMass(-deltaMass, 0.3f);//броня немного увеличивается при торможении
+            SphereMass -= deltaMass;//ускорение тут отрицательно поэтому минус стоит у массы
+            
         }
         //зависит от ускорения - если оно положительно, то сброс если отрицательно то набор
     }
