@@ -4,14 +4,15 @@
         "GameAssembly",
         "LibrariesAssembly",
         "UIAssembly",
-        "Managers"
+        "Managers",
+        "Unity.ugui"
     ],
-    "optionalUnityReferences": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": []
+    "defineConstraints": [],
+    "versionDefines": []
 }

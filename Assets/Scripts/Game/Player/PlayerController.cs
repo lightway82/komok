@@ -1,18 +1,20 @@
 ﻿using System;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Events;
+using OneLine;
 
 
+public class SphereDeathEvent: UnityEvent{}
 
-public class ShpereDeathEvent: UnityEvent{
-
-}
+public class ChangeTerrainEvent: UnityEvent<Terrain>{}
 
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(RespawnZonesController))]
 public class PlayerController: MonoBehaviour
 {
+   
     
     [Header("Важно. Массу не задавать! Вычисляется из радиуса.")]
     [Header("Важно. Сферу не масштабировать! Радиус задать ниже!!!.")]
@@ -24,7 +26,10 @@ public class PlayerController: MonoBehaviour
     [SerializeField]
     [Tooltip("Вертикальная ось из настроек осей")]
     private string VerticalAxis="Vertical";
+    
    
+    private LevelController _levelController;
+    
     [SerializeField]
     [Range(10,5000)]
     [Tooltip("Значение силы природы в ньютонах. Это постоянная и перенаправляемая управлением сила.")]
@@ -119,7 +124,7 @@ public class PlayerController: MonoBehaviour
     
     
     [Tooltip("Событие кончины шара")]
-    public ShpereDeathEvent shpereDeathEvent = new ShpereDeathEvent();
+    public SphereDeathEvent sphereDeathEvent = new SphereDeathEvent();
 
 
     private float _shield;
@@ -133,6 +138,9 @@ public class PlayerController: MonoBehaviour
     [SerializeField]
     [Range(0,1)]
     private float ShieldIncreaseByMoving=0.1f;
+
+ 
+    
     
     public float SphereRadius { get; private set; }
     
@@ -150,10 +158,6 @@ public class PlayerController: MonoBehaviour
 
     private Vector3 _otherForce;
    
-    //private MeshCollider _collider;
-
-
-
     private bool _isMassInited;
     public float SphereMass
     {
@@ -164,6 +168,7 @@ public class PlayerController: MonoBehaviour
             {
                 if (value < MaxMass)
                 {
+                   
                     if(_isMassInited)ConstantForce *= value/SphereMass;//перерасчет силы, если это второе и более обращение к установке массы(тк ранее масса некорректна)
                     _rigidbody.mass = value;
                     _isMassInited = true;
@@ -182,17 +187,20 @@ public class PlayerController: MonoBehaviour
 
     private float _moveHorizontal;
     private float _moveVertical;
-
-    
-    
    
+    
+    private ChangeTerrainEvent _changeTerrainEvent = new ChangeTerrainEvent();
+
+    public ChangeTerrainEvent OnChangeTerrainEvent => _changeTerrainEvent;
+
+
     private GroundEvent _groundEvent=new GroundEvent();
 
     /// <summary>
     /// Событие изменения состояния игрока на повехности - он летит или на чем-то стоит или во что-то ударился в полете
     /// </summary>
-    public GroundEvent OnGroundEvent { get=>_groundEvent;}
-    
+    public GroundEvent OnGroundEvent => _groundEvent;
+
     private bool _isOnGround;
     public bool IsOnGround
     {
@@ -205,6 +213,8 @@ public class PlayerController: MonoBehaviour
         } 
     }
 
+    
+    
     private GameObject _dynamics;//динамические объекты
 
     private RespawnZonesController _respawnZonesController;
@@ -221,7 +231,15 @@ public class PlayerController: MonoBehaviour
         {
             deathZone.ZoneEvent.AddListener(SphereDeath);
         }
-            
+
+       _levelController =  FindObjectOfType<LevelController>();
+       if(_levelController == null) throw  new Exception("Отсутствует объект со скриптом LevelController");
+
+
+       foreach (var teleport in FindObjectsOfType<Teleport>())
+       {
+           teleport.OnTeleportPlayerEvent.AddListener(Teleport);
+       }
     }
 
     void Start()
@@ -232,8 +250,15 @@ public class PlayerController: MonoBehaviour
     private Vector3 _moveDirection;
     private Vector3 _lastPos;
 
-    
-  
+
+    private void Teleport(Transform position)
+    {
+
+        transform.position = position.position;
+        transform.rotation = position.rotation;
+
+    }
+
 
     private RespawnZone FindNearRespawn()
     {
@@ -245,6 +270,7 @@ public class PlayerController: MonoBehaviour
     {
         Velocity = Vector3.zero;
         SphereMass = CalcSphereMass(SphereStartRadius, SphereDensity);//масссферы от ее радиуса и плотности
+       
         _rigidbody.AddForce(Vector3.forward*StartKickForce, ForceMode.Impulse);//стартовый пиннок под зад
         _lastPos = transform.position;
         
@@ -255,7 +281,7 @@ public class PlayerController: MonoBehaviour
     {
         _shield = StartShield;
         var respawn = FindNearRespawn();
-        transform.position = respawn.transform.position;
+        transform.position = respawn.SpawnPoint;
         transform.rotation = respawn.transform.rotation;
         InitSphere();
 
@@ -297,7 +323,7 @@ public class PlayerController: MonoBehaviour
        GUILayout.EndHorizontal();
        GUILayout.BeginHorizontal();
        GUILayout.Label("Радиус разрушения:");
-       GUILayout.Label($"{DeathRadiusPersent:f2}");
+       GUILayout.Label($"{SphereStartRadius*DeathRadiusPersent:f2}");
        GUILayout.EndHorizontal();
        GUILayout.BeginHorizontal();
        GUILayout.Label("Масса:");
@@ -343,8 +369,7 @@ public class PlayerController: MonoBehaviour
     private void OnCollisionEnter(Collision other)
     {
         IsOnGround = true;
-       // var terrain = other.gameObject.GetComponent<TerrainCollider>();
-      //  Vector3 velocity = other.relativeVelocity;
+        if (other.collider as TerrainCollider != null) OnChangeTerrainEvent.Invoke(other.gameObject.GetComponent<Terrain>());
 
         DropMassByFallAndStaticCollision(other);
         
@@ -631,7 +656,8 @@ public class PlayerController: MonoBehaviour
     private void OnDestroy()
     {
         
-        shpereDeathEvent.RemoveAllListeners();
+        sphereDeathEvent.RemoveAllListeners();
         _groundEvent.RemoveAllListeners();
+        _changeTerrainEvent.RemoveAllListeners();
     }
 }

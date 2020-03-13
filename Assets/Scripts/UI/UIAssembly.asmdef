@@ -3,14 +3,15 @@
     "references": [
         "LibrariesAssembly",
         "Managers",
-        "ToolsAssembly"
+        "ToolsAssembly",
+        "Unity.ugui"
     ],
-    "optionalUnityReferences": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": []
+    "defineConstraints": [],
+    "versionDefines": []
 }

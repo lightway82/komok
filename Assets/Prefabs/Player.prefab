@@ -69,6 +69,7 @@ MeshRenderer:
   m_ProbeAnchor: {fileID: 0}
   m_LightProbeVolumeOverride: {fileID: 0}
   m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
   m_PreserveUVs: 0
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
@@ -124,22 +125,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   HorizontalAxis: Horizontal
   VerticalAxis: Vertical
-  ConstantForce: 1000
-  BreakMultipier: 8
-  ConstantForceMultiplier: 15
-  RotateMultipier: 14
+  ConstantForce: 700
+  BreakMultipier: 9
+  ConstantForceMultiplier: 22
+  RotateMultipier: 12
   RotateAccelerateMultipier: 3
   RotateBreakMultipier: 3
-  InFlyMultiplier: 0.2
+  InFlyMultiplier: 0.05
   StartKickForce: 100
-  DistanceMassMultiplier: 5
-  SphereDensity: 300
+  DistanceMassMultiplier: 4.7
+  SphereDensity: 220
   SphereStartRadius: 1
-  MassRadiusMultiplaier: 1
-  DropMassMultiplaier: 0.3
-  DropMassAcceleratePersent: 0.01
-  GetMassBreakPersent: 0.01
-  DeathMass: 10
+  MassRadiusMultiplaier: 1.7
+  DropMassMultiplaier: 0.6
+  DropMassAccelerateCoeff: 0.35
+  GetMassBreakCoeff: 0.3
+  DeathRadiusPersent: 0.95
+  MaxMass: 1500
+  MaxVelocity: 75
+  StartShield: 0
+  ShieldIncreaseByMoving: 0
 --- !u!114 &1637680099369798272
 MonoBehaviour:
   m_ObjectHideFlags: 0
